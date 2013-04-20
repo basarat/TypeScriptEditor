@@ -1,9 +1,9 @@
 (function() {
   var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
-  define('EditorPosition', ['require', 'exports', 'module'], function(require, exports, module) {
+  define('EditorPosition', ['require', 'exports', 'module','DocumentPositionUtil'], function(require, exports, module,documentpositionutil) {
     var DocumentPositionUtil, EditorPosition;
-    DocumentPositionUtil = require('DocumentPositionUtil').DocumentPositionUtil;
+    DocumentPositionUtil = documentpositionutil.DocumentPositionUtil;
     EditorPosition = (function() {
 
       function EditorPosition(editor) {
