@@ -2,7 +2,9 @@ TypeScript Playground on Ace
 ==========================
 TypeScript Playground build on ace editor
 
-http://hi104.github.com/typescript-playground-on-ace/
+http://basarat.github.com/typescripteditor/
+
+It is built "around" the ace editor so uses ACE to manage dependencies instead of requirejs etc.
 
 See Also
 -----------------
