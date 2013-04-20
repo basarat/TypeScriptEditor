@@ -3,10 +3,17 @@
     <properties>
       <sourceFilesUrls>
         <item url="file://$PROJECT_DIR$/scripts/FileService.js" />
+        <item url="file://$PROJECT_DIR$/scripts/DocumentPositionUtil.js" />
+        <item url="file://$PROJECT_DIR$/scripts/EditorPosition.js" />
+        <item url="file://$PROJECT_DIR$/scripts/EditorPosition.js" />
       </sourceFilesUrls>
     </properties>
     <CLASSES>
+      <root url="file://$PROJECT_DIR$/scripts/DocumentPositionUtil.js" />
       <root url="file://$PROJECT_DIR$/scripts/FileService.js" />
+      <root url="file://$PROJECT_DIR$/scripts/DocumentPositionUtil.js" />
+      <root url="file://$PROJECT_DIR$/scripts/EditorPosition.js" />
+      <root url="file://$PROJECT_DIR$/scripts/EditorPosition.js" />
     </CLASSES>
     <SOURCES />
   </library>

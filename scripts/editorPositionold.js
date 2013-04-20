@@ -1,10 +1,9 @@
 (function() {
   var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
-  define('EditorPosition', ['require', 'exports', 'module','DocumentPositionUtil'], function(require, exports, module,documentpositionutil) {
-    var DocumentPositionUtil, EditorPosition;
-    DocumentPositionUtil = documentpositionutil.DocumentPositionUtil;
-    EditorPosition = (function() {
+  define('EditorPosition', ['require', 'exports', 'module','DocumentPositionUtil'], function(require, exports, module,DocumentPositionUtil) {
+
+    var EditorPosition = (function() {
 
       function EditorPosition(editor) {
         this.editor = editor;
@@ -14,22 +13,23 @@
         this.getCurrentCharPosition = __bind(this.getCurrentCharPosition, this);
         this.getAcePositionFromChars = __bind(this.getAcePositionFromChars, this);
         this.getPositionChars = __bind(this.getPositionChars, this);
+        this.docPosition = new DocumentPositionUtil.DocumentPositionUtil();
       }
 
       EditorPosition.prototype.getLinesChars = function(lines) {
-        return DocumentPositionUtil.getLinesChars(lines);
+        return docPosition.getLinesChars(lines);
       };
 
       EditorPosition.prototype.getPositionChars = function(pos) {
         var doc;
         doc = this.editor.getSession().getDocument();
-        return DocumentPositionUtil.getChars(doc, pos);
+        return this.docPosition.getChars(doc, pos);
       };
 
       EditorPosition.prototype.getAcePositionFromChars = function(chars) {
         var doc;
         doc = this.editor.getSession().getDocument();
-        return DocumentPositionUtil.getPosition(doc, chars);
+        return docPosition.getPosition(doc, chars);
       };
 
       EditorPosition.prototype.getCurrentCharPosition = function() {
