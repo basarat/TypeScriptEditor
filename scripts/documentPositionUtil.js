@@ -1,8 +1,8 @@
 (function() {
 
   define('DocumentPositionUtil', ['require', 'exports', 'module'], function(require, exports, module) {
-    var DocumentPositionUtil;
-    DocumentPositionUtil = (function() {
+
+    var asdf = (function() {
 
       function DocumentPositionUtil() {}
 
@@ -45,7 +45,7 @@
       return DocumentPositionUtil;
 
     })();
-    exports.DocumentPositionUtil = DocumentPositionUtil;
+    exports.DocumentPositionUtil = asdf;
     return exports;
   });
 

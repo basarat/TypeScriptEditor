@@ -2,7 +2,7 @@
 // implementation of requirejs as present in ACE editor
 
 // Gets a file from the server
-class FileService{
+export class FileService{
 
     constructor(public ajaxHost){}
 
@@ -17,5 +17,3 @@ class FileService{
             );
         }
 }
-
-define('FileService',  ['require', 'exports', 'module' ], (require, exports, module) =>{  exports.FileService = FileService  });
