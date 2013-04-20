@@ -2,11 +2,15 @@
   <library name="Generated files" type="javaScript">
     <properties>
       <sourceFilesUrls>
+        <item url="file://$PROJECT_DIR$/scripts/EditorPosition.js" />
         <item url="file://$PROJECT_DIR$/scripts/CompilationService.js" />
+        <item url="file://$PROJECT_DIR$/scripts/FileService.js" />
       </sourceFilesUrls>
     </properties>
     <CLASSES>
+      <root url="file://$PROJECT_DIR$/scripts/EditorPosition.js" />
       <root url="file://$PROJECT_DIR$/scripts/CompilationService.js" />
+      <root url="file://$PROJECT_DIR$/scripts/FileService.js" />
     </CLASSES>
     <SOURCES />
   </library>

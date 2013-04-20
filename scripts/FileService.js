@@ -17,4 +17,3 @@ define(["require", "exports"], function(require, exports) {
     })();
     exports.FileService = FileService;    
 })
-//@ sourceMappingURL=FileService.js.map
