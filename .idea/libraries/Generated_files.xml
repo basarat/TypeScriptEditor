@@ -6,7 +6,7 @@
       </sourceFilesUrls>
     </properties>
     <CLASSES>
-      <root url="file://$PROJECT_DIR$/src/ts/FileService.js" />
+      <root url="file://$PROJECT_DIR$/javascripts/FileService.js" />
     </CLASSES>
     <SOURCES />
   </library>

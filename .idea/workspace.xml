@@ -2,28 +2,25 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="a40665ae-f9a4-4f0f-9b25-084a55f116f1" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/ts/FileService.ts" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/libraries/Generated_files.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/TypeScriptEditor.iml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/dictionaries/bas.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/encodings.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/misc.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/modules.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/scopes/scope_settings.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/vcs.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/watcherTasks.xml" />
-      <change type="DELETED" beforePath="D:\CodingScratch\TypeScriptEditor\javascripts\fileService.js" afterPath="" />
-      <change type="DELETED" beforePath="D:\CodingScratch\TypeScriptEditor\src\coffee\fileService.coffee" afterPath="" />
+      <change type="DELETED" beforePath="D:\CodingScratch\TypeScriptEditor\src\typescript-mode\typescript\lightHarness.js" afterPath="" />
+      <change type="DELETED" beforePath="D:\CodingScratch\TypeScriptEditor\src\typescript-mode\typescript\typescriptServices.js" afterPath="" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/libraries/Generated_files.xml" afterPath="$PROJECT_DIR$/.idea/libraries/Generated_files.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/README.md" afterPath="$PROJECT_DIR$/README.md" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/index.html" afterPath="$PROJECT_DIR$/index.html" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MOVED" beforePath="D:\CodingScratch\TypeScriptEditor\javascripts\lib\typescript\typescriptServices.js" afterPath="$PROJECT_DIR$/javascripts/typescript/typescriptServices.js" />
+      <change type="MOVED" beforePath="D:\CodingScratch\TypeScriptEditor\javascripts\lightHarness.js" afterPath="$PROJECT_DIR$/javascripts/typescript/lightHarness.js" />
+      <change type="MOVED" beforePath="D:\CodingScratch\TypeScriptEditor\src\ts\FileService.js" afterPath="$PROJECT_DIR$/javascripts/FileService.js" />
+      <change type="MOVED" beforePath="D:\CodingScratch\TypeScriptEditor\src\ts\FileService.js.map" afterPath="$PROJECT_DIR$/javascripts/FileService.js.map" />
+      <change type="MOVED" beforePath="D:\CodingScratch\TypeScriptEditor\src\ts\FileService.ts" afterPath="$PROJECT_DIR$/javascripts/FileService.ts" />
     </list>
     <ignored path="TypeScriptEditor.iws" />
     <ignored path=".idea/workspace.xml" />
     <file path="/Dummy.txt" changelist="a40665ae-f9a4-4f0f-9b25-084a55f116f1" time="1366453777253" ignored="false" />
-    <file path="/a.dummy" changelist="a40665ae-f9a4-4f0f-9b25-084a55f116f1" time="1366454095799" ignored="false" />
+    <file path="/a.dummy" changelist="a40665ae-f9a4-4f0f-9b25-084a55f116f1" time="1366455489077" ignored="false" />
     <file path="/FileService.ts" changelist="a40665ae-f9a4-4f0f-9b25-084a55f116f1" time="1366454407771" ignored="false" />
-    <file path="/index.html" changelist="a40665ae-f9a4-4f0f-9b25-084a55f116f1" time="1366453772995" ignored="false" />
-    <file path="/README.md" changelist="a40665ae-f9a4-4f0f-9b25-084a55f116f1" time="1366455328897" ignored="false" />
+    <file path="/index.html" changelist="a40665ae-f9a4-4f0f-9b25-084a55f116f1" time="1366455874442" ignored="false" />
+    <file path="/README.md" changelist="a40665ae-f9a4-4f0f-9b25-084a55f116f1" time="1366456304243" ignored="false" />
     <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -46,7 +43,7 @@
       <file leaf-file-name="index.html" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/index.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="88" column="34" selection-start="3210" selection-end="3210" vertical-scroll-proportion="-14.194445">
+            <state line="67" column="12" selection-start="2368" selection-end="2368" vertical-scroll-proportion="-11.192307">
               <folding>
                 <element signature="n#style#0;n#div#0;n#body#0;n#html#0;n#!!top" expanded="true" />
                 <element signature="n#style#0;n#div#0;n#div#0;n#div#0;n#body#0;n#html#0;n#!!top" expanded="true" />
@@ -65,55 +62,19 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="README.md" pinned="false" current="true" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/README.md">
+      <file leaf-file-name="lightHarness.js" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/javascripts/typescript/lightHarness.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="6" column="52" selection-start="196" selection-end="196" vertical-scroll-proportion="0.12085308">
+            <state line="28" column="63" selection-start="1020" selection-end="1020" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="autoCompleteView.coffee" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/coffee/autoCompleteView.coffee">
+      <file leaf-file-name="typescriptServices.js" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/javascripts/typescript/typescriptServices.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="-0.0">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="autoComplete.js" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/javascripts/autoComplete.js">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="56" column="0" selection-start="2051" selection-end="2051" vertical-scroll-proportion="0.0">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="autoCompleteView.js" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/javascripts/autoCompleteView.js">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="41" column="53" selection-start="1644" selection-end="1644" vertical-scroll-proportion="0.0">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="FileService.js" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/ts/FileService.js">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="18" column="86" selection-start="489" selection-end="489" vertical-scroll-proportion="0.0">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="FileService.ts" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/ts/FileService.ts">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="3" column="31" selection-start="168" selection-end="168" vertical-scroll-proportion="0.0">
+            <state line="84" column="3" selection-start="4278" selection-end="4422" vertical-scroll-proportion="0.0">
               <folding>
                 <element signature="n#!!doc" expanded="true" />
               </folding>
@@ -121,19 +82,19 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="editorPosition.coffee" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/coffee/editorPosition.coffee">
+      <file leaf-file-name="README.md" pinned="false" current="true" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/README.md">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="-0.0">
+            <state line="22" column="62" selection-start="650" selection-end="650" vertical-scroll-proportion="0.44312796">
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="lightHarness.js" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/javascripts/lightHarness.js">
+      <file leaf-file-name="main.js" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/javascripts/main.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="101" column="54" selection-start="4226" selection-end="4226" vertical-scroll-proportion="0.0">
+            <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
@@ -161,6 +122,7 @@
         <option value="$PROJECT_DIR$/javascripts/fileService.js" />
         <option value="$PROJECT_DIR$/src/coffee/FileService.ts" />
         <option value="$PROJECT_DIR$/index.html" />
+        <option value="$PROJECT_DIR$/javascripts/typescript/typescriptServices.js" />
         <option value="$PROJECT_DIR$/README.md" />
       </list>
     </option>
@@ -244,6 +206,10 @@
               <option name="myItemId" value="src" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="typescript-mode" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
           </PATH>
           <PATH>
             <PATH_ELEMENT>
@@ -259,7 +225,11 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
-              <option name="myItemId" value="ts" />
+              <option name="myItemId" value="typescript-mode" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="typescript" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
@@ -295,6 +265,42 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="TypeScriptEditor" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="TypeScriptEditor" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="javascripts" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="typescript" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="TypeScriptEditor" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="TypeScriptEditor" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="javascripts" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="lib" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
         </subPane>
       </pane>
       <pane id="Scope" />
@@ -311,6 +317,8 @@
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\CodingScratch\TypeScriptEditor\javascripts\typescript" />
+      <recent name="D:\CodingScratch\TypeScriptEditor\javascripts" />
       <recent name="D:\CodingScratch\TypeScriptEditor\src\ts" />
     </key>
   </component>
@@ -383,13 +391,13 @@
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32973805" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.32973805" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.19545823" sideWeight="0.6702619" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.39984593" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.32973805" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32973805" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
@@ -460,13 +468,6 @@
     <breakpoint-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/src/coffee/autoCompleteView.coffee">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/javascripts/autoCompleteView.js">
       <provider selected="true" editor-type-id="text-editor">
         <state line="31" column="50" selection-start="1217" selection-end="1217" vertical-scroll-proportion="0.0">
@@ -501,13 +502,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/javascripts/lightHarness.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="101" column="54" selection-start="4226" selection-end="4226" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/javascripts/autoCompleteView.js">
       <provider selected="true" editor-type-id="text-editor">
         <state line="41" column="53" selection-start="1644" selection-end="1644" vertical-scroll-proportion="0.0">
@@ -522,14 +516,14 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/ts/FileService.js">
+    <entry file="file://$PROJECT_DIR$/javascripts/FileService.js">
       <provider selected="true" editor-type-id="text-editor">
         <state line="18" column="86" selection-start="489" selection-end="489" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/ts/FileService.ts">
+    <entry file="file://$PROJECT_DIR$/javascripts/FileService.ts">
       <provider selected="true" editor-type-id="text-editor">
         <state line="3" column="31" selection-start="168" selection-end="168" vertical-scroll-proportion="0.0">
           <folding>
@@ -545,9 +539,36 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/javascripts/lib/ace/ace.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="160" column="13" selection-start="5099" selection-end="5099" vertical-scroll-proportion="-70.47774">
+          <folding>
+            <marker date="1366450744322" expanded="false" signature="-1:-1" placeholder="..." />
+            <marker date="1366450744322" expanded="false" signature="-1:-1" placeholder="..." />
+            <marker date="1366450744322" expanded="false" signature="-1:-1" placeholder="..." />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/javascripts/lib/ace/mode-javascript.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="563" column="22" selection-start="25006" selection-end="25006" vertical-scroll-proportion="0.47051746">
+          <folding>
+            <element signature="n#!!doc" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/javascripts/main.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/index.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="88" column="34" selection-start="3210" selection-end="3210" vertical-scroll-proportion="-14.194445">
+        <state line="67" column="12" selection-start="2368" selection-end="2368" vertical-scroll-proportion="-11.192307">
           <folding>
             <element signature="n#style#0;n#div#0;n#body#0;n#html#0;n#!!top" expanded="true" />
             <element signature="n#style#0;n#div#0;n#div#0;n#div#0;n#body#0;n#html#0;n#!!top" expanded="true" />
@@ -565,9 +586,25 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/javascripts/typescript/lightHarness.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="28" column="63" selection-start="1020" selection-end="1020" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/javascripts/typescript/typescriptServices.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="84" column="3" selection-start="4278" selection-end="4422" vertical-scroll-proportion="0.0">
+          <folding>
+            <element signature="n#!!doc" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/README.md">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="6" column="52" selection-start="196" selection-end="196" vertical-scroll-proportion="0.12085308">
+        <state line="22" column="62" selection-start="650" selection-end="650" vertical-scroll-proportion="0.44312796">
           <folding />
         </state>
       </provider>
