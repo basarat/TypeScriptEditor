@@ -1,7 +1,7 @@
 // parcial copy from typescript harness.js
 
 // Copyright (c) Microsoft. All rights reserved. Licensed under the Apache License, Version 2.0. 
-define('lightHarness', ['require', 'exports', 'module', 'ace/keyboard/hash_handler'], function(require, exports, module) {
+define(['require', 'exports', 'module', 'ace/keyboard/hash_handler'], function(require, exports, module) {
 
 var __extends = this.__extends || function (d, b) {
     function __() {
