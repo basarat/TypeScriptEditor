@@ -1,4 +1,4 @@
-define('autocomplete', ['require', 'exports', 'module', 'ace/keyboard/hash_handler'], function(require, exports, module) {
+define('autocomplete', ['require', 'exports', 'module', 'ace/keyboard/hash_handler', 'AutoCompleteView'], function(require, exports, module) {
 
     var HashHandler = require('ace/keyboard/hash_handler').HashHandler;
     var EventEmitter = require("ace/lib/event_emitter").EventEmitter;

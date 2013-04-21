@@ -82,8 +82,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ------------- End of ThirdPartyNotices --------------------------------------------------- */
 // Original line of code in compiled file changed from:
-// define(function(require, exports, module) {
-define('typescriptServices', ['require', 'exports', 'module' ], function(require, exports, module) {
+define(['require','exports','module'],function(require, exports, module) {
 
 var TypeScript;
 (function (TypeScript) {
