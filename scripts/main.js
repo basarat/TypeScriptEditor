@@ -295,11 +295,11 @@ define(['require',
     $(function(){
         appFileService = new FileService($);
         editor = ace.edit("editor");
-        editor.setTheme("ace/theme/monokai");
+        editor.setTheme("ace/theme/github");
         editor.getSession().setMode('ace/mode/typescript');
 
         outputEditor = ace.edit("output");
-        outputEditor.setTheme("ace/theme/monokai");
+        outputEditor.setTheme("ace/theme/github");
         outputEditor.getSession().setMode('ace/mode/javascript');
         document.getElementById('editor').style.fontSize='14px';
         document.getElementById('output').style.fontSize='14px';
