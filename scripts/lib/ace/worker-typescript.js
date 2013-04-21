@@ -1,5 +1,10 @@
 "no use strict";
 
+// Fix for requirejs+ace
+// Replace all "efine with ace."efine(
+ace={}
+
+
 // Majority of this file is based on typescriptServices.js
 
 if (typeof window != "undefined" && window.document)
@@ -66,7 +71,7 @@ var require = function(parentId, id) {
 require.modules = {};
 require.tlns = {};
 
-var define = function(id, deps, factory) {
+ace.define = function(id, deps, factory) {
     if (arguments.length == 2) {
         factory = deps;
         if (typeof id != "string") {
@@ -158,7 +163,7 @@ onmessage = function(e) {
 };
 // vim:set ts=4 sts=4 sw=4 st:
 
-define('ace/lib/fixoldbrowsers', ['require', 'exports', 'module' , 'ace/lib/regexp', 'ace/lib/es5-shim'], function(require, exports, module) {
+ace.define('ace/lib/fixoldbrowsers', ['require', 'exports', 'module' , 'ace/lib/regexp', 'ace/lib/es5-shim'], function(require, exports, module) {
 
 
 require("./regexp");
@@ -166,7 +171,7 @@ require("./es5-shim");
 
 });
  
-define('ace/lib/regexp', ['require', 'exports', 'module' ], function(require, exports, module) {
+ace.define('ace/lib/regexp', ['require', 'exports', 'module' ], function(require, exports, module) {
 
     var real = {
             exec: RegExp.prototype.exec,
@@ -238,7 +243,7 @@ define('ace/lib/regexp', ['require', 'exports', 'module' ], function(require, ex
 
 });
 
-define('ace/lib/es5-shim', ['require', 'exports', 'module' ], function(require, exports, module) {
+ace.define('ace/lib/es5-shim', ['require', 'exports', 'module' ], function(require, exports, module) {
 
 if (!Function.prototype.bind) {
     Function.prototype.bind = function bind(that) { // .length is 1
@@ -867,7 +872,7 @@ var prepareString = "a"[0] != "a",
     };
 });
 
-define('ace/lib/event_emitter', ['require', 'exports', 'module' ], function(require, exports, module) {
+ace.define('ace/lib/event_emitter', ['require', 'exports', 'module' ], function(require, exports, module) {
 
 
 var EventEmitter = {};
@@ -952,7 +957,7 @@ exports.EventEmitter = EventEmitter;
 
 });
 
-define('ace/lib/oop', ['require', 'exports', 'module' ], function(require, exports, module) {
+ace.define('ace/lib/oop', ['require', 'exports', 'module' ], function(require, exports, module) {
 
 
 exports.inherits = (function() {
@@ -976,7 +981,7 @@ exports.implement = function(proto, mixin) {
 };
 
 });
-define('ace/mode/typescript_worker', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/worker/mirror', 'ace/lib/lang', 'ace/document', 'ace/mode/typescript/DocumentPositionUtil', 'ace/mode/typescript/typescriptServices', 'ace/mode/typescript/lightHarness'], function(require, exports, module) {
+ace.define('ace/mode/typescript_worker', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/worker/mirror', 'ace/lib/lang', 'ace/document', 'ace/mode/typescript/DocumentPositionUtil', 'ace/mode/typescript/typescriptServices', 'ace/mode/typescript/lightHarness'], function(require, exports, module) {
 
 
     var oop = require("../lib/oop");
@@ -1133,7 +1138,7 @@ define('ace/mode/typescript_worker', ['require', 'exports', 'module' , 'ace/lib/
 
     }).call(TypeScriptWorker.prototype);
 
-});define('ace/worker/mirror', ['require', 'exports', 'module' , 'ace/document', 'ace/lib/lang'], function(require, exports, module) {
+});ace.define('ace/worker/mirror', ['require', 'exports', 'module' , 'ace/document', 'ace/lib/lang'], function(require, exports, module) {
 
 
 var Document = require("../document").Document;
@@ -1176,7 +1181,7 @@ var Mirror = exports.Mirror = function(sender) {
 
 });
 
-define('ace/document', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/lib/event_emitter', 'ace/range', 'ace/anchor'], function(require, exports, module) {
+ace.define('ace/document', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/lib/event_emitter', 'ace/range', 'ace/anchor'], function(require, exports, module) {
 
 
 var oop = require("./lib/oop");
@@ -1503,7 +1508,7 @@ var Document = function(text) {
 exports.Document = Document;
 });
 
-define('ace/range', ['require', 'exports', 'module' ], function(require, exports, module) {
+ace.define('ace/range', ['require', 'exports', 'module' ], function(require, exports, module) {
 var Range = function(startRow, startColumn, endRow, endColumn) {
     this.start = {
         row: startRow,
@@ -1745,7 +1750,7 @@ Range.fromPoints = function(start, end) {
 exports.Range = Range;
 });
 
-define('ace/anchor', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/lib/event_emitter'], function(require, exports, module) {
+ace.define('ace/anchor', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/lib/event_emitter'], function(require, exports, module) {
 
 
 var oop = require("./lib/oop");
@@ -1897,7 +1902,7 @@ var Anchor = exports.Anchor = function(doc, row, column) {
 
 });
 
-define('ace/lib/lang', ['require', 'exports', 'module' ], function(require, exports, module) {
+ace.define('ace/lib/lang', ['require', 'exports', 'module' ], function(require, exports, module) {
 
 
 exports.stringReverse = function(string) {
@@ -2067,7 +2072,7 @@ exports.delayedCall = function(fcn, defaultTimeout) {
 });
 (function() {
 
-  define('ace/mode/typescript/DocumentPositionUtil', ['require', 'exports', 'module' ], function(require, exports, module) {
+  ace.define('ace/mode/typescript/DocumentPositionUtil', ['require', 'exports', 'module' ], function(require, exports, module) {
     var DocumentPositionUtil;
     DocumentPositionUtil = (function() {
 
@@ -2117,7 +2122,7 @@ exports.delayedCall = function(fcn, defaultTimeout) {
 
 }).call(this);
 
-define('ace/mode/typescript/typescriptServices', ['require', 'exports', 'module' ], function(require, exports, module) {
+ace.define('ace/mode/typescript/typescriptServices', ['require', 'exports', 'module' ], function(require, exports, module) {
 
 var TypeScript;
 (function (TypeScript) {
@@ -7623,7 +7628,7 @@ var TypeScript;
                             dependencyList += ", \"" + moduleDecl.amdDependencies[i] + "\"";
                         }
                         dependencyList += "]";
-                        this.writeLineToOutput("define(" + dependencyList + "," + " function(" + importList + ") {");
+                        this.writeLineToOutput("ace.define(" + dependencyList + "," + " function(" + importList + ") {");
                     } else {
                     }
                 } else {
@@ -32238,7 +32243,7 @@ exports.Formatting = Formatting;
 exports.Services = Services;
 
 });// parcial copy from typescript harness.js
-define('ace/mode/typescript/lightHarness', ['require', 'exports', 'module' , 'ace/mode/typescript/typescriptServices'], function(require, exports, module) {
+ace.define('ace/mode/typescript/lightHarness', ['require', 'exports', 'module' , 'ace/mode/typescript/typescriptServices'], function(require, exports, module) {
 
 var __extends = this.__extends || function (d, b) {
     function __() {
