@@ -38,7 +38,9 @@ declare module Services{
     }
 }
 
-// From harness.ts
+// Direct copy of the following two classes From harness.ts
+// Uncommented some type definitions. Lefts others intact (despite errors) since it still compiles.
+
 export class ScriptInfo {
     public version: number;
     public editRanges:any/*: { length: number; editRange: TypeScript.ScriptEditRange; }[]*/ = [];
