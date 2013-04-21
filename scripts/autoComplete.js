@@ -31,6 +31,10 @@ define('autocomplete', ['require', 'exports', 'module', 'ace/keyboard/hash_handl
             self.listElement.innerHTML = '';
         };
 
+        this.hide = function(){
+            self.view.hide();
+        }
+
         this.compilation = function(cursor){
             var compilationInfo = compilationService.getCursorCompilation(self.scriptName, cursor);
             var text  = compilationService.matchText;
