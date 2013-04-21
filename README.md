@@ -4,14 +4,9 @@ TypeScript Playground build on ace editor
 
 http://basarat.github.com/typescripteditor/
 
-It is built "around" the ace editor so uses ACE to manage dependencies instead of requirejs etc.
+It is built "around" the ace editor. Uses AMD with RequireJS.
 
-This means you either use the compiled typescript files and change :
-define(function(require, exports, module) {
-to something like:
-define('typescriptServices', ['require', 'exports', 'module' ], function(require, exports, module) {
-
-OR look at how we manually define exports FileService.ts
+Files used from Typescript on codeplex have comments mentioned.
 
 See Also
 -----------------

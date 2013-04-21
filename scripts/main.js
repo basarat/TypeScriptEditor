@@ -4,7 +4,7 @@ define(['require',
     'CompilationService',
     'FileService',
     'typescriptServices',
-    'lightHarness'
+    'Harness'
 ],function(require){
 
     var AceRange = require('ace/range').Range;
@@ -17,7 +17,7 @@ define(['require',
 
     var Services = require('typescriptServices').Services;
     var TypeScript = require('typescriptServices').TypeScript;
-    var TypeScriptLS = require('lightHarness').TypeScriptLS;
+    var TypeScriptLS = require('Harness').TypeScriptLS;
 
     var aceEditorPosition = null;
     var appFileService = null;
