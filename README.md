@@ -16,3 +16,7 @@ http://www.typescriptlang.org/Playground/
 
 Ace
 http://ace.ajax.org
+
+The binaries of ACE were used:
+https://github.com/ajaxorg/ace-builds
+The src folder.
