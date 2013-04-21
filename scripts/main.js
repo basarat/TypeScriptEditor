@@ -7,13 +7,15 @@ define(['require',
     'Harness'
 ],function(require){
 
-    var AceRange = require('ace/range').Range;
+    var AceRange = ace.require('ace/range').Range;
+    var lang = ace.require("ace/lib/lang");
+    var deferredCall = ace.require("ace/lib/lang").deferredCall;
+
     var AutoComplete= require('autocomplete').AutoComplete;
-    var lang = require("ace/lib/lang");
     var EditorPosition = require('EditorPosition').EditorPosition;
     var CompilationService =  require('CompilationService').CompilationService;
     var FileService =  require('FileService').FileService;
-    var deferredCall = require("ace/lib/lang").deferredCall;
+
 
     var Services = require('typescriptServices').Services;
     var TypeScript = require('typescriptServices').TypeScript;
