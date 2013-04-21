@@ -2122,6 +2122,7 @@ exports.delayedCall = function(fcn, defaultTimeout) {
 
 }).call(this);
 
+// copy from typescriptServices.js
 ace.define('ace/mode/typescript/typescriptServices', ['require', 'exports', 'module' ], function(require, exports, module) {
 
 var TypeScript;
@@ -32242,7 +32243,9 @@ exports.TypeScript = TypeScript;
 exports.Formatting = Formatting;
 exports.Services = Services;
 
-});// parcial copy from typescript harness.js
+});
+
+// copy from typescript harness.js
 ace.define('ace/mode/typescript/lightHarness', ['require', 'exports', 'module' , 'ace/mode/typescript/typescriptServices'], function(require, exports, module) {
 
 var __extends = this.__extends || function (d, b) {
