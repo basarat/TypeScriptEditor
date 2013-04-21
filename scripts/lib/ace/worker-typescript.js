@@ -1,5 +1,7 @@
 "no use strict";
 
+// Majority of this file is based on typescriptServices.js
+
 if (typeof window != "undefined" && window.document)
     throw "atempt to load ace worker into main window instead of webWorker";
 
@@ -2113,7 +2115,8 @@ exports.delayedCall = function(fcn, defaultTimeout) {
     return exports;
   });
 
-}).call(this);
+}).call(this);
+
 define('ace/mode/typescript/typescriptServices', ['require', 'exports', 'module' ], function(require, exports, module) {
 
 var TypeScript;
@@ -8794,7 +8797,7 @@ var TypeScript;
                         this.outfile.WriteLine("// " + this.fname + " (" + lineCol.line + "," + lineCol.col + "): " + message);
                     }
                 } else {
-                    throw new SyntaxError(this.fname + " (" + this.scanner.line + "," + this.scanner.col + "): " + message);
+                    // throw new SyntaxError(this.fname + " (" + this.scanner.line + "," + this.scanner.col + "): " + message);
                 }
             }
         };
@@ -32362,7 +32365,8 @@ var TypeScriptLS = (function () {
     TypeScriptLS.prototype.fatal = function () {
         return true;
     };
-    TypeScriptLS.prototype.log = function (s) {
+    TypeScriptLS.prototype.log = function (s) {
+
     };
     TypeScriptLS.prototype.getCompilationSettings = function () {
         return "";
