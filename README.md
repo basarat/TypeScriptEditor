@@ -2,7 +2,7 @@ TypeScript Playground on Ace
 ==========================
 TypeScript Playground build on ace editor
 
-http://basarat.github.com/typescripteditor/
+http://basarat.github.io/TypeScriptEditor/
 
 It is built "around" the ace editor. Uses AMD with RequireJS.
 
