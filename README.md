@@ -19,4 +19,4 @@ http://ace.ajax.org
 
 The binaries of ACE were used:
 https://github.com/ajaxorg/ace-builds
-The src folder.
+The src no conflict folder.
