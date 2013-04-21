@@ -39,11 +39,12 @@ declare module Services{
 }
 
 // Direct copy of the following two classes From harness.ts
-// Uncommented some type definitions. Lefts others intact (despite errors) since it still compiles.
+// Left as is. Despite errors it will compile. Mostly interface definitions missing.
+// Even though assert is missing the calling functions are not used in this project so no biggy.
 
 export class ScriptInfo {
     public version: number;
-    public editRanges:any/*: { length: number; editRange: TypeScript.ScriptEditRange; }[]*/ = [];
+    public editRanges: { length: number; editRange: TypeScript.ScriptEditRange; }[] = [];
 
     constructor(public name: string, public content: string, public isResident: bool, public maxScriptVersions: number) {
         this.version = 1;
@@ -65,7 +66,7 @@ export class ScriptInfo {
 
         // Store edit range + new length of script
         this.editRanges.push({
-            length: (this.content.length),
+            length: this.content.length,
             editRange: new TypeScript.ScriptEditRange(minChar, limChar, (limChar - minChar) + newText.length)
         });
 
@@ -99,20 +100,20 @@ export class ScriptInfo {
     }
 }
 
-export class TypeScriptLS /*implements Services.ILanguageServiceShimHost*/ {
-    private ls/*: Services.ILanguageServiceShim*/ = null;
+export class TypeScriptLS implements Services.ILanguageServiceShimHost {
+    private ls: Services.ILanguageServiceShim = null;
 
-    public scripts:any /*ScriptInfo[] */= [];
+    public scripts: ScriptInfo[] = [];
     public maxScriptVersions = 100;
 
-//    public addDefaultLibrary() {
-//        this.addScript("lib.d.ts", Harness.Compiler.libText, true);
-//    }
+    public addDefaultLibrary() {
+        this.addScript("lib.d.ts", Harness.Compiler.libText, true);
+    }
 
-//    public addFile(name: string, isResident = false) {
-//        var code: string = readFile(name);
-//        this.addScript(name, code, isResident);
-//    }
+    public addFile(name: string, isResident = false) {
+        var code: string = readFile(name);
+        this.addScript(name, code, isResident);
+    }
 
     public addScript(name: string, content: string, isResident = false) {
         var script = new ScriptInfo(name, content, isResident, this.maxScriptVersions);
@@ -201,7 +202,7 @@ export class TypeScriptLS /*implements Services.ILanguageServiceShimHost*/ {
     // Return a new instance of the language service shim, up-to-date wrt to typecheck.
     // To access the non-shim (i.e. actual) language service, use the "ls.languageService" property.
     //
-    public getLanguageService()/*: Services.ILanguageServiceShim */{
+    public getLanguageService(): Services.ILanguageServiceShim {
         var ls = new Services.TypeScriptServicesFactory().createLanguageServiceShim(this);
         ls.refresh(true);
         this.ls = ls;
@@ -211,7 +212,7 @@ export class TypeScriptLS /*implements Services.ILanguageServiceShimHost*/ {
     //
     // Parse file given its source text
     //
-    public parseSourceText(fileName: string, sourceText/*: TypeScript.ISourceText*/)/*: TypeScript.Script */{
+    public parseSourceText(fileName: string, sourceText: TypeScript.ISourceText): TypeScript.Script {
         var parser = new TypeScript.Parser();
         parser.setErrorRecovery(null);
         parser.errorCallback = (a, b, c, d) => { };
@@ -233,6 +234,10 @@ export class TypeScriptLS /*implements Services.ILanguageServiceShimHost*/ {
     //
     public lineColToPosition(fileName: string, line: number, col: number): number {
         var script = this.ls.languageService.getScriptAST(fileName);
+        assert.notNull(script);
+        assert.is(line >= 1);
+        assert.is(col >= 1);
+        assert.is(line < script.locationInfo.lineMap.length);
 
         return TypeScript.getPositionFromLineColumn(script, line, col);
     }
@@ -240,30 +245,35 @@ export class TypeScriptLS /*implements Services.ILanguageServiceShimHost*/ {
     //
     // line and column are 1-based
     //
-    public positionToLineCol(fileName: string, position: number)/*: TypeScript.ILineCol*/ {
+    public positionToLineCol(fileName: string, position: number): TypeScript.ILineCol {
         var script = this.ls.languageService.getScriptAST(fileName);
+        assert.notNull(script);
 
         var result = TypeScript.getLineColumnFromPosition(script, position);
 
+        assert.is(result.line >= 1);
+        assert.is(result.col >= 1);
         return result;
     }
 
-//    //
-//    // Verify that applying edits to "sourceFileName" result in the content of the file
-//    // "baselineFileName"
-//    //
-//    public checkEdits(sourceFileName: string, baselineFileName: string, edits/*: Services.TextEdit[]*/) {
-//        var script = readFile(sourceFileName);
-//        var formattedScript = this.applyEdits(script, edits);
-//        var baseline = readFile(baselineFileName);
-//
-//    }
+    //
+    // Verify that applying edits to "sourceFileName" result in the content of the file
+    // "baselineFileName"
+    //
+    public checkEdits(sourceFileName: string, baselineFileName: string, edits: Services.TextEdit[]) {
+        var script = readFile(sourceFileName);
+        var formattedScript = this.applyEdits(script, edits);
+        var baseline = readFile(baselineFileName);
+
+        assert.noDiff(formattedScript, baseline);
+        assert.equal(formattedScript, baseline);
+    }
 
 
     //
     // Apply an array of text edits to a string, and return the resulting string.
     //
-    public applyEdits(content: string, edits/*: Services.TextEdit[]*/): string {
+    public applyEdits(content: string, edits: Services.TextEdit[]): string {
         var result = content;
         edits = this.normalizeEdits(edits);
 

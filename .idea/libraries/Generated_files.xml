@@ -3,12 +3,10 @@
     <properties>
       <sourceFilesUrls>
         <item url="file://$PROJECT_DIR$/scripts/Harness.js" />
-        <item url="file://$PROJECT_DIR$/scripts/AutoCompleteView.js" />
       </sourceFilesUrls>
     </properties>
     <CLASSES>
       <root url="file://$PROJECT_DIR$/scripts/Harness.js" />
-      <root url="file://$PROJECT_DIR$/scripts/AutoCompleteView.js" />
     </CLASSES>
     <SOURCES />
   </library>

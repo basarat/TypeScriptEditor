@@ -44,7 +44,7 @@ define(["require", "exports"], function(require, exports) {
             var suffix = this.content.substring(limChar);
             this.content = prefix + middle + suffix;
             this.editRanges.push({
-                length: (this.content.length),
+                length: this.content.length,
                 editRange: new TypeScript.ScriptEditRange(minChar, limChar, (limChar - minChar) + newText.length)
             });
             if(this.editRanges.length > this.maxScriptVersions) {
@@ -87,6 +87,14 @@ define(["require", "exports"], function(require, exports) {
             this.scripts = [];
             this.maxScriptVersions = 100;
         }
+        TypeScriptLS.prototype.addDefaultLibrary = function () {
+            this.addScript("lib.d.ts", Harness.Compiler.libText, true);
+        };
+        TypeScriptLS.prototype.addFile = function (name, isResident) {
+            if (typeof isResident === "undefined") { isResident = false; }
+            var code = readFile(name);
+            this.addScript(name, code, isResident);
+        };
         TypeScriptLS.prototype.addScript = function (name, content, isResident) {
             if (typeof isResident === "undefined") { isResident = false; }
             var script = new ScriptInfo(name, content, isResident, this.maxScriptVersions);
@@ -177,12 +185,26 @@ define(["require", "exports"], function(require, exports) {
         };
         TypeScriptLS.prototype.lineColToPosition = function (fileName, line, col) {
             var script = this.ls.languageService.getScriptAST(fileName);
+            assert.notNull(script);
+            assert.is(line >= 1);
+            assert.is(col >= 1);
+            assert.is(line < script.locationInfo.lineMap.length);
             return TypeScript.getPositionFromLineColumn(script, line, col);
         };
         TypeScriptLS.prototype.positionToLineCol = function (fileName, position) {
             var script = this.ls.languageService.getScriptAST(fileName);
+            assert.notNull(script);
             var result = TypeScript.getLineColumnFromPosition(script, position);
+            assert.is(result.line >= 1);
+            assert.is(result.col >= 1);
             return result;
+        };
+        TypeScriptLS.prototype.checkEdits = function (sourceFileName, baselineFileName, edits) {
+            var script = readFile(sourceFileName);
+            var formattedScript = this.applyEdits(script, edits);
+            var baseline = readFile(baselineFileName);
+            assert.noDiff(formattedScript, baseline);
+            assert.equal(formattedScript, baseline);
         };
         TypeScriptLS.prototype.applyEdits = function (content, edits) {
             var result = content;
