@@ -3,7 +3,7 @@ define(['require',
     'EditorPosition',
     'CompilationService',
     'FileService',
-    'typescriptServices',
+    './lib/typescriptServices',
     'Harness'
 ],function(require){
 
@@ -17,8 +17,8 @@ define(['require',
     var FileService =  require('FileService').FileService;
 
 
-    var Services = require('typescriptServices').Services;
-    var TypeScript = require('typescriptServices').TypeScript;
+    var Services = require('./lib/typescriptServices').Services;
+    var TypeScript = require('./lib/typescriptServices').TypeScript;
     var TypeScriptLS = require('Harness').TypeScriptLS;
 
     var aceEditorPosition = null;
