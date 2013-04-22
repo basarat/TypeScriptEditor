@@ -72,9 +72,14 @@
   </body>
 
 
-  <script type="text/javascript" src="scripts/lib/ace/ace.js"></script>
+  <script type="text/javascript">
+      var require = {
+          paths: {
+              ace: "lib/ace"
+          }
+      };
+  </script>
   <script type="text/javascript" src="scripts/lib/jquery.js"></script>
-
   <script type="text/javascript" data-main="scripts/main" src="scripts/lib/require.js"></script>
 
   <script type="text/javascript" src="scripts/autoComplete.js"></script>

@@ -4,12 +4,16 @@ define(['require',
     'CompilationService',
     'FileService',
     './lib/typescriptServices',
-    'Harness'
+    'Harness',
+    'lib/ace/range',
+    'lib/ace/lib/lang',
+    'lib/ace/lib/lang',
+    'lib/ace/ace'
 ],function(require){
 
-    var AceRange = ace.require('ace/range').Range;
-    var lang = ace.require("ace/lib/lang");
-    var deferredCall = ace.require("ace/lib/lang").deferredCall;
+    var AceRange = require('lib/ace/range').Range;
+    var lang = require("lib/ace/lib/lang");
+    var deferredCall = require("lib/ace/lib/lang").deferredCall;
 
     var AutoComplete= require('autocomplete').AutoComplete;
     var EditorPosition = require('EditorPosition').EditorPosition;
@@ -295,6 +299,7 @@ define(['require',
     }
 
     $(function(){
+        var ace=require('lib/ace/ace')
         appFileService = new FileService($);
         editor = ace.edit("editor");
         editor.setTheme("ace/theme/github");

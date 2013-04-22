@@ -1,8 +1,13 @@
-define('autocomplete', ['require', 'exports', 'module' , 'AutoCompleteView'], function(require, exports, module) {
+define('autocomplete', ['require', 'exports', 'module' , 'AutoCompleteView',
+    'lib/ace/keyboard/hash_handler',
+    'lib/ace/lib/event_emitter',
+    'lib/ace/lib/oop'
+],
+    function(require, exports, module) {
 
-    var HashHandler = ace.require('ace/keyboard/hash_handler').HashHandler;
-    var EventEmitter = ace.require("ace/lib/event_emitter").EventEmitter;
-    var oop = ace.require("ace/lib/oop");
+    var HashHandler = require('lib/ace/keyboard/hash_handler').HashHandler;
+    var EventEmitter = require('lib/ace/lib/event_emitter').EventEmitter;
+    var oop = require('lib/ace/lib/oop');
 
     var AutoCompleteView = require('AutoCompleteView').AutoCompleteView;
 
