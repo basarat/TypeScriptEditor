@@ -73,25 +73,15 @@
 <!--DEVEL-->
   <script type="text/javascript">
       var require = {
-          baseUrl: window.location.protocol + "//" + window.location.host + window.location.pathname.split("/").slice(0, -1).join("/")+'/editor',
+          // The base path for all require calls. If this is absent it is assumed to be same as the location of require.js
+          baseUrl: window.location.protocol + "//" + window.location.host + window.location.pathname.split("/").slice(0, -1).join("/")+'/scripts',
           paths: {
-              ace: "../lib/ace" // path of ace relative to baseUrl
+              ace: "./lib/ace" // path of ace relative to baseUrl
           }
       };
   </script>
-  <script type="text/javascript" src="lib/jquery.js"></script>
-  <script src="editor/require.js" data-main="main" type="text/javascript"></script>
+  <script type="text/javascript" src="./scripts/lib/jquery.js"></script>
+  <script src="./scripts/lib/require.js" data-main="main" type="text/javascript"></script>
 
-<!--DEVEL-->
-
-<!--PACKAGE
-  <script src="src/ace.js" data-ace-base="src" type="text/javascript" charset="utf-8"></script>
-  <script src="src/keybinding-vim.js"></script>
-  <script src="src/keybinding-emacs.js"></script>
-  <script src="editor/main.js"></script>
-  <script type="text/javascript" charset="utf-8">
-    require("editor/demo");
-  </script>
-    PACKAGE-->
 
 </html>

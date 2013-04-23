@@ -1,24 +1,15 @@
-define(['require',
-    'autocomplete',
-    'EditorPosition',
-    'CompilationService',
-    'FileService',
-    './lib/typescriptServices',
-    'Harness'
-],function(require){
-
-    var AceRange = ace.require('ace/range').Range;
-    var lang = ace.require("ace/lib/lang");
-    var deferredCall = ace.require("ace/lib/lang").deferredCall;
-
+define(function(require, exports, module) {
+    var ace = require('ace/ace');
+    var AceRange = require('ace/range').Range;
     var AutoComplete= require('autocomplete').AutoComplete;
+    var lang = require("ace/lib/lang");
     var EditorPosition = require('EditorPosition').EditorPosition;
     var CompilationService =  require('CompilationService').CompilationService;
     var FileService =  require('FileService').FileService;
+    var deferredCall = require("ace/lib/lang").deferredCall;
 
-
-    var Services = require('./lib/typescriptServices').Services;
-    var TypeScript = require('./lib/typescriptServices').TypeScript;
+    var Services = require('typescriptServices').Services;
+    var TypeScript = require('typescriptServices').TypeScript;
     var TypeScriptLS = require('Harness').TypeScriptLS;
 
     var aceEditorPosition = null;
