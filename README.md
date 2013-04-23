@@ -6,13 +6,12 @@ http://basarat.github.io/TypeScriptEditor/
 
 It is built "around" the ace editor. Uses AMD with RequireJS.
 
-Files used from Typescript on codeplex have comments mentioned.
-Only two files :
--lightHarness (from harness.js)
--typescriptServices.js
+Files used from the Typescript project on codeplex:
+- lightHarness (from harness.js)
+- typescriptServices.js
 were used from the typescript project.
 
-Comments are mentioned in how they were modified, so you should be able to update to the latest version.
+Comments are mentioned in how they were modified, so you should be able to update to the latest version of Typescript fairly easily
 
 Also supports loading of custom definition files. Currently only loads lib.d.ts locally.
 
