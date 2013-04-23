@@ -2,6 +2,11 @@
 //
 // in Parser.prototype.reportParseError = function (message, startPos, pos) {
 // commented out throw new SyntaxError
+//
+// Also added a define call at the top. And closed it at the
+// bottom
+//
+// Also added exports at the bottom
 
 define(function(require, exports, module) {
         var TypeScript;
