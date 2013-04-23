@@ -1,6 +1,7 @@
 /// This is an extract of harness.js .
-//   Just the ScriptInfo and the
+///   Just the ScriptInfo and the
 ///  TypeScriptLS classes.
+/// Notice the manual require calls for ./typescriptServices.
 define(function(require, exports, module) {
 
     var __extends = this.__extends || function (d, b) {

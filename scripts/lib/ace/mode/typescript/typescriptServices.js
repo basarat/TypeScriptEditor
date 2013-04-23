@@ -1,3 +1,8 @@
+/// Almost a direct copy.
+//
+// in Parser.prototype.reportParseError = function (message, startPos, pos) {
+// commented out throw new SyntaxError
+
 define(function(require, exports, module) {
         var TypeScript;
         (function (TypeScript) {

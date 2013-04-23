@@ -8,9 +8,9 @@ define(function(require, exports, module) {
     var FileService =  require('FileService').FileService;
     var deferredCall = require("ace/lib/lang").deferredCall;
 
-    var Services = require('typescriptServices').Services;
-    var TypeScript = require('typescriptServices').TypeScript;
-    var TypeScriptLS = require('Harness').TypeScriptLS;
+    var Services = require('ace/mode/typescript/typescriptServices').Services;
+    var TypeScript = require('ace/mode/typescript/typescriptServices').TypeScript;
+    var TypeScriptLS = require('ace/mode/typescript/lightHarness').TypeScriptLS;
 
     var aceEditorPosition = null;
     var appFileService = null;
