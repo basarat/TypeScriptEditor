@@ -1,82 +1,97 @@
 <html>
-  <head>
+<head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-	<title>Typescript playground on ace editor</title>
-	<meta name="description" content="Typescript playground on ace editor" /><meta>
+    <title>Typescript playground on ace editor</title>
+    <meta name="description" content="Typescript playground on ace editor" /><meta>
     <link type="text/css" rel="stylesheet" href="stylesheets/bootstrap.min.css" />
     <link type="text/css" rel="stylesheet" href="stylesheets/style.css" />
-  </head>
-  <body>
+</head>
+<body>
 
-    <div class="fluid-container" style="padding:5px">
-      <div>
+<div class="fluid-container" style="padding:5px">
+    <div>
         <h1>TypeScript Editor</h1>
         <div style="padding:10px">
-          <p>
-            <a href="http://www.typescriptlang.org/Playground/">typescript playground </a> build on
-            <a href="http://ace.ajax.org">ace editor</a>.
-          </p>
-          <p>
+            <p>
+                <a href="http://www.typescriptlang.org/Playground/">typescript playground </a> build on
+                <a href="http://ace.ajax.org">ace editor</a>.
+            </p>
+            <p>
             <ul>
-              <li>shortcut key [Ctrl-Space] : AutoComplete</li>
-              <li>shortcut key F2 : Refactor</li>
+                <li>shortcut key [Ctrl-Space] : AutoComplete</li>
             </ul>
-          </p>
+            </p>
         </div>
-      </div>
-
-      <div class="editor-area">
-        <div class="warp-container">
-          <div class="langauge-title" style="float:left">
-            <div style="float:left">
-              <h2>typescript</h2>
-            </div>
-            <div style="float:left;padding-top:5px;padding-left:20px">
-              <select id="select-sample">
-                <option selected="selected" value="greeter.ts">Walkthrough:Classes</option>
-                <option value="raytracer.ts">Raytracer</option>
-                <option value="animal.ts">Simple inheritance</option>
-
-              </select>
-            </div>
-            <div style="clear:both"></div>
-          </div>
-          <div class="editor-container">
-            <div id="editor">
-            </div>
-          </div>
-        </div>
-
-        <div class="warp-container">
-          <div class="langauge-title" style="float:right">
-            <div style="float:left">
-              <div id="javascript-run">Run</div>
-            </div>
-            <div style="float:left;margin-left:10px">
-              <h2>javascript</h2>
-            </div>
-          </div>
-          <div style="clear:both"></div>
-          <div class="editor-container" style="float:right">
-            <div id="output">
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="footer" style="padding:5px;">
-        <p>source code on <a href="https://github.com/basarat/typescripteditor">github</a></p>
-      </div>
     </div>
 
-  </body>
+    <div class="editor-area">
+        <div class="warp-container">
+            <div class="langauge-title" style="float:left">
+                <div style="float:left">
+                    <h2>typescript</h2>
+                </div>
+                <div style="float:left;padding-top:5px;padding-left:20px">
+                    <select id="select-sample">
+                        <option selected="selected" value="greeter.ts">Walkthrough:Classes</option>
+                        <option value="raytracer.ts">Raytracer</option>
+                        <option value="animal.ts">Simple inheritance</option>
 
+                    </select>
+                </div>
+                <div style="clear:both"></div>
+            </div>
+            <div class="editor-container">
+                <div id="editor">
+                </div>
+            </div>
+        </div>
 
-  <script type="text/javascript" src="scripts/lib/ace/ace.js"></script>
-  <script type="text/javascript" src="scripts/lib/jquery.js"></script>
+        <div class="warp-container">
+            <div class="langauge-title" style="float:right">
+                <div style="float:left">
+                    <div id="javascript-run">Run</div>
+                </div>
+                <div style="float:left;margin-left:10px">
+                    <h2>javascript</h2>
+                </div>
+            </div>
+            <div style="clear:both"></div>
+            <div class="editor-container" style="float:right">
+                <div id="output">
+                </div>
+            </div>
+        </div>
+    </div>
 
-  <script type="text/javascript" data-main="scripts/main" src="scripts/lib/require.js"></script>
+    <div class="footer" style="padding:5px;">
+        <p>source code on <a href="https://github.com/basarat/typescripteditor">github</a></p>
+    </div>
+</div>
 
-  <script type="text/javascript" src="scripts/autoComplete.js"></script>
+</body>
+
+<!--DEVEL-->
+  <script type="text/javascript">
+      var require = {
+          baseUrl: window.location.protocol + "//" + window.location.host + window.location.pathname.split("/").slice(0, -1).join("/")+'/editor',
+          paths: {
+              ace: "../lib/ace" // path of ace relative to baseUrl
+          }
+      };
+  </script>
+  <script type="text/javascript" src="lib/jquery.js"></script>
+  <script src="editor/require.js" data-main="main" type="text/javascript"></script>
+
+<!--DEVEL-->
+
+<!--PACKAGE
+  <script src="src/ace.js" data-ace-base="src" type="text/javascript" charset="utf-8"></script>
+  <script src="src/keybinding-vim.js"></script>
+  <script src="src/keybinding-emacs.js"></script>
+  <script src="editor/main.js"></script>
+  <script type="text/javascript" charset="utf-8">
+    require("editor/demo");
+  </script>
+    PACKAGE-->
 
 </html>
