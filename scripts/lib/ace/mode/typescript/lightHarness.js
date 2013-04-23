@@ -1,3 +1,6 @@
+/// This is an extract of harness.js .
+//   Just the ScriptInfo and the
+///  TypeScriptLS classes.
 define(function(require, exports, module) {
 
     var __extends = this.__extends || function (d, b) {
