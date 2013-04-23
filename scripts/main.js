@@ -34,6 +34,11 @@ define(function(require, exports, module) {
             "typescripts/lib.d.ts"
         ];
 
+        // Add a non network script to get the balls rolling more quickly
+        // See https://typescript.codeplex.com/workitem/129
+        var iArgs = "interface IArguments {           [index: number]: any;        length: number;        callee: Function;    }";
+        typeScriptLS.addScript('start.d.ts',iArgs,true);
+
         libnames.forEach(function(libname){
             appFileService.readFile(libname, function(content){
                 typeScriptLS.addScript(libname, content.replace(/\r\n?/g,"\n"), true);
