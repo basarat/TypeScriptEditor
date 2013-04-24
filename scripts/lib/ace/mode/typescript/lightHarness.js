@@ -15,107 +15,91 @@ define(function(require, exports, module) {
     var Services = require('./typescriptServices').Services;
     var TypeScript = require('./typescriptServices').TypeScript;
 
-    var ScriptInfo = (function () {
-        function ScriptInfo(name, content, isResident, maxScriptVersions) {
-            this.name = name;
+	// paste script info. And add export at end 
+	var ScriptInfo = (function () {
+        function ScriptInfo(fileName, content, isOpen) {
+            if (typeof isOpen === "undefined") { isOpen = true; }
+            this.fileName = fileName;
             this.content = content;
-            this.isResident = isResident;
-            this.maxScriptVersions = maxScriptVersions;
-            this.editRanges = [];
+            this.isOpen = isOpen;
             this.version = 1;
-        }
-        ScriptInfo.prototype.updateContent = function (content, isResident) {
             this.editRanges = [];
+            this.lineMap = null;
+            this.setContent(content);
+        }
+        ScriptInfo.prototype.setContent = function (content) {
             this.content = content;
-            this.isResident = isResident;
+            this.lineMap = TypeScript.LineMap.fromString(content);
+        };
+        ScriptInfo.prototype.updateContent = function (content) {
+            this.editRanges = [];
+            this.setContent(content);
             this.version++;
         };
         ScriptInfo.prototype.editContent = function (minChar, limChar, newText) {
             var prefix = this.content.substring(0, minChar);
             var middle = newText;
             var suffix = this.content.substring(limChar);
-            this.content = prefix + middle + suffix;
+            this.setContent(prefix + middle + suffix);
             this.editRanges.push({
                 length: this.content.length,
-                editRange: new TypeScript.ScriptEditRange(minChar, limChar, (limChar - minChar) + newText.length)
+                textChangeRange: new TypeScript.TextChangeRange(TypeScript.TextSpan.fromBounds(minChar, limChar), newText.length)
             });
-            if(this.editRanges.length > this.maxScriptVersions) {
-                this.editRanges.splice(0, this.maxScriptVersions - this.editRanges.length);
-            }
             this.version++;
         };
-        ScriptInfo.prototype.getEditRangeSinceVersion = function (version) {
-            if(this.version == version) {
-                return null;
+        ScriptInfo.prototype.getTextChangeRangeBetweenVersions = function (startVersion, endVersion) {
+            if (startVersion === endVersion) {
+                return TypeScript.TextChangeRange.unchanged;
             }
-            var initialEditRangeIndex = this.editRanges.length - (this.version - version);
-            if(initialEditRangeIndex < 0 || initialEditRangeIndex >= this.editRanges.length) {
-                return TypeScript.ScriptEditRange.unknown();
-            }
-            var entries = this.editRanges.slice(initialEditRangeIndex);
-            var minDistFromStart = entries.map(function (x) {
-                return x.editRange.minChar;
-            }).reduce(function (prev, current) {
-                    return Math.min(prev, current);
-                });
-            var minDistFromEnd = entries.map(function (x) {
-                return x.length - x.editRange.limChar;
-            }).reduce(function (prev, current) {
-                    return Math.min(prev, current);
-                });
-            var aggDelta = entries.map(function (x) {
-                return x.editRange.delta;
-            }).reduce(function (prev, current) {
-                    return prev + current;
-                });
-            return new TypeScript.ScriptEditRange(minDistFromStart, entries[0].length - minDistFromEnd, aggDelta);
+            var initialEditRangeIndex = this.editRanges.length - (this.version - startVersion);
+            var lastEditRangeIndex = this.editRanges.length - (this.version - endVersion);
+            var entries = this.editRanges.slice(initialEditRangeIndex, lastEditRangeIndex);
+            return TypeScript.TextChangeRange.collapseChangesAcrossMultipleVersions(entries.map(function (e) {
+                return e.textChangeRange;
+            }));
         };
         return ScriptInfo;
     })();
-    exports.ScriptInfo = ScriptInfo;
-    var TypeScriptLS = (function () {
+	// Added export 
+	 exports.ScriptInfo = ScriptInfo;
+	 // Paste TypeScriptLS: 
+	 var TypeScriptLS = (function () {
         function TypeScriptLS() {
             this.ls = null;
-            this.scripts = [];
-            this.maxScriptVersions = 100;
+            this.fileNameToScript = new TypeScript.StringHashTable();
         }
         TypeScriptLS.prototype.addDefaultLibrary = function () {
-            this.addScript("lib.d.ts", Harness.Compiler.libText, true);
+            this.addScript("lib.d.ts", Harness.Compiler.libText);
         };
-        TypeScriptLS.prototype.addFile = function (name, isResident) {
-            if (typeof isResident === "undefined") { isResident = false; }
-            var code = Harness.CollateralReader.read(name);
-            this.addScript(name, code, isResident);
+        TypeScriptLS.prototype.addFile = function (fileName) {
+            var code = readFile(name);
+            this.addScript(name, code);
         };
-        TypeScriptLS.prototype.addScript = function (name, content, isResident) {
-            if (typeof isResident === "undefined") { isResident = false; }
-            var script = new ScriptInfo(name, content, isResident, this.maxScriptVersions);
-            this.scripts.push(script);
+        TypeScriptLS.prototype.getScriptInfo = function (fileName) {
+            return this.fileNameToScript.lookup(fileName);
         };
-        TypeScriptLS.prototype.updateScript = function (name, content, isResident) {
-            if (typeof isResident === "undefined") { isResident = false; }
-            for(var i = 0; i < this.scripts.length; i++) {
-                if(this.scripts[i].name == name) {
-                    this.scripts[i].updateContent(content, isResident);
-                    return;
-                }
+        TypeScriptLS.prototype.addScript = function (fileName, content) {
+            var script = new ScriptInfo(fileName, content);
+            this.fileNameToScript.add(fileName, script);
+        };
+        TypeScriptLS.prototype.updateScript = function (fileName, content) {
+            var script = this.getScriptInfo(fileName);
+            if (script !== null) {
+                script.updateContent(content);
+                return;
             }
-            this.addScript(name, content, isResident);
+            this.addScript(fileName, content);
         };
-        TypeScriptLS.prototype.editScript = function (name, minChar, limChar, newText) {
-            for(var i = 0; i < this.scripts.length; i++) {
-                if(this.scripts[i].name == name) {
-                    this.scripts[i].editContent(minChar, limChar, newText);
-                    return;
-                }
+        TypeScriptLS.prototype.editScript = function (fileName, minChar, limChar, newText) {
+            var script = this.getScriptInfo(fileName);
+            if (script !== null) {
+                script.editContent(minChar, limChar, newText);
+                return;
             }
             throw new Error("No script with name '" + name + "'");
         };
-        TypeScriptLS.prototype.getScriptContent = function (scriptIndex) {
-            return this.scripts[scriptIndex].content;
-        };
         TypeScriptLS.prototype.information = function () {
-            return true;
+            return false;
         };
         TypeScriptLS.prototype.debug = function () {
             return true;
@@ -130,32 +114,24 @@ define(function(require, exports, module) {
             return true;
         };
         TypeScriptLS.prototype.log = function (s) {
-
         };
         TypeScriptLS.prototype.getCompilationSettings = function () {
             return "";
         };
-        TypeScriptLS.prototype.getScriptCount = function () {
-            return this.scripts.length;
+        TypeScriptLS.prototype.getScriptFileNames = function () {
+            return JSON2.stringify(this.fileNameToScript.getAllKeys());
         };
-        TypeScriptLS.prototype.getScriptSourceText = function (scriptIndex, start, end) {
-            return this.scripts[scriptIndex].content.substring(start, end);
+        TypeScriptLS.prototype.getScriptSnapshot = function (fileName) {
+            return new ScriptSnapshotShim(this.getScriptInfo(fileName));
         };
-        TypeScriptLS.prototype.getScriptSourceLength = function (scriptIndex) {
-            return this.scripts[scriptIndex].content.length;
+        TypeScriptLS.prototype.getScriptVersion = function (fileName) {
+            return this.getScriptInfo(fileName).version;
         };
-        TypeScriptLS.prototype.getScriptId = function (scriptIndex) {
-            return this.scripts[scriptIndex].name;
+        TypeScriptLS.prototype.getScriptIsOpen = function (fileName) {
+            return this.getScriptInfo(fileName).isOpen;
         };
-        TypeScriptLS.prototype.getScriptIsResident = function (scriptIndex) {
-            return this.scripts[scriptIndex].isResident;
-        };
-        TypeScriptLS.prototype.getScriptVersion = function (scriptIndex) {
-            return this.scripts[scriptIndex].version;
-        };
-        TypeScriptLS.prototype.getScriptEditRangeSinceVersion = function (scriptIndex, scriptVersion) {
-            var range = this.scripts[scriptIndex].getEditRangeSinceVersion(scriptVersion);
-            return (range.minChar + "," + range.limChar + "," + range.delta);
+        TypeScriptLS.prototype.getDiagnosticsObject = function () {
+            return new LanguageServicesDiagnostics("");
         };
         TypeScriptLS.prototype.getLanguageService = function () {
             var ls = new Services.TypeScriptServicesFactory().createLanguageServiceShim(this);
@@ -164,37 +140,34 @@ define(function(require, exports, module) {
             return ls;
         };
         TypeScriptLS.prototype.parseSourceText = function (fileName, sourceText) {
-            var parser = new TypeScript.Parser();
-            parser.setErrorRecovery(null, -1, -1);
-            parser.errorCallback = function (a, b, c, d) {
-            };
-            var script = parser.parse(sourceText, fileName, 0);
-            return script;
+            return TypeScript.SyntaxTreeToAstVisitor.visit(TypeScript.Parser.parse(fileName, TypeScript.SimpleText.fromScriptSnapshot(sourceText), TypeScript.isDTSFile(fileName)), fileName, new TypeScript.CompilationSettings());
         };
         TypeScriptLS.prototype.parseFile = function (fileName) {
-            var sourceText = new TypeScript.StringSourceText(IO.readFile(fileName));
+            var sourceText = TypeScript.ScriptSnapshot.fromString(IO.readFile(fileName));
             return this.parseSourceText(fileName, sourceText);
         };
         TypeScriptLS.prototype.lineColToPosition = function (fileName, line, col) {
-            var script = this.ls.languageService.getScriptAST(fileName);
+            var script = this.fileNameToScript.lookup(fileName);
             assert.notNull(script);
-            assert(line >= 1);
-            assert(col >= 1);
-            assert(line < script.locationInfo.lineMap.length);
-            return TypeScript.getPositionFromLineColumn(script, line, col);
+            assert.is(line >= 1);
+            assert.is(col >= 1);
+            return script.lineMap.getPosition(line - 1, col - 1);
         };
-        TypeScriptLS.prototype.positionToLineCol = function (fileName, position) {
-            var script = this.ls.languageService.getScriptAST(fileName);
+        TypeScriptLS.prototype.positionToZeroBasedLineCol = function (fileName, position) {
+            var script = this.fileNameToScript.lookup(fileName);
             assert.notNull(script);
-            var result = TypeScript.getLineColumnFromPosition(script, position);
-            assert(result.line >= 1);
-            assert(result.col >= 1);
-            return result;
+            var result = script.lineMap.getLineAndCharacterFromPosition(position);
+            assert.is(result.line() >= 0);
+            assert.is(result.character() >= 0);
+            return {
+                line: result.line(),
+                character: result.character()
+            };
         };
         TypeScriptLS.prototype.checkEdits = function (sourceFileName, baselineFileName, edits) {
-            var script = Harness.CollateralReader.read(sourceFileName);
+            var script = readFile(sourceFileName);
             var formattedScript = this.applyEdits(script, edits);
-            var baseline = Harness.CollateralReader.read(baselineFileName);
+            var baseline = readFile(baselineFileName);
             assert.noDiff(formattedScript, baseline);
             assert.equal(formattedScript, baseline);
         };
@@ -224,7 +197,7 @@ define(function(require, exports, module) {
             }
             var temp = mapEdits(edits).sort(function (a, b) {
                 var result = a.edit.minChar - b.edit.minChar;
-                if(result == 0) {
+                if (result === 0) {
                     result = a.index - b.index;
                 }
                 return result;
@@ -233,20 +206,20 @@ define(function(require, exports, module) {
             var next = 1;
             while(current < temp.length) {
                 var currentEdit = temp[current].edit;
-                if(next >= temp.length) {
+                if (next >= temp.length) {
                     result.push(currentEdit);
                     current++;
                     continue;
                 }
                 var nextEdit = temp[next].edit;
                 var gap = nextEdit.minChar - currentEdit.limChar;
-                if(gap >= 0) {
+                if (gap >= 0) {
                     result.push(currentEdit);
                     current = next;
                     next++;
                     continue;
                 }
-                if(currentEdit.limChar >= nextEdit.limChar) {
+                if (currentEdit.limChar >= nextEdit.limChar) {
                     next++;
                     continue;
                 } else {
@@ -257,6 +230,6 @@ define(function(require, exports, module) {
         };
         return TypeScriptLS;
     })();
-    exports.TypeScriptLS = TypeScriptLS;
-
+    // Paste till the end:
+	exports.TypeScriptLS = TypeScriptLS;
 });
