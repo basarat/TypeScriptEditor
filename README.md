@@ -25,3 +25,7 @@ Ace
 http://ace.ajax.org
 
 The src of ace was used. You can build using r.js if you want.
+
+This is a fork of the excellent original project : https://github.com/hi104/typescript-playground-on-ace
+
+The key changes from that project are that this one does not duplicate code (multiple version of typescriptServices.js), does not rely on Coffeescript and uses the source of ace which makes it easier for other people to extend.
