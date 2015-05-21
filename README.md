@@ -30,6 +30,18 @@ Being served at : http://ace.c9.io/api/index.html
 Docs : https://github.com/ajaxorg/ace/wiki/How-to-enable-Autocomplete-in-the-Ace-editor
 Sample : http://plnkr.co/edit/6MVntVmXYUbjR0DI82Cr?p=preview
 
+## Adding a TypeScript Mode 
+Needs files in the ace modes folder
+specifically:
+
+```ts
+typescript.js
+typescript_highlight_rules.js
+typescript_worker.js
+```
+It is conventional to put files that *these ^* files need into the `modes/typescript/` folder so that they do not pollute the root modes folder.
+
+
 See Also
 -----------------
 
