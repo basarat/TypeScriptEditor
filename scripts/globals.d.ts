@@ -1,9 +1,16 @@
 declare var require: any;
 declare var $: any;
 
+// Depends on ace
 declare module "ace/ace" {
-    var ace: any;
     export = ace;
+}
+
+declare module AceAjax{
+    interface IEditSession{
+        // Only present if a worker is being used
+        $worker: any;
+    }
 }
 
 declare module "ace/range" {

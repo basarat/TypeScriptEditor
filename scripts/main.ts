@@ -15,8 +15,8 @@ import {TypeScriptLS} from 'ace/mode/typescript/lightHarness';
 
 var aceEditorPosition = null;
 var appFileService = null;
-var editor = null;
-var outputEditor = null;
+var editor:AceAjax.Editor = null;
+var outputEditor:AceAjax.Editor = null;
 var typeCompilationService = null;
 var docUpdateCount = 0;
 var typeScriptLS =  new TypeScriptLS();
@@ -122,7 +122,7 @@ function updateMarker(aceChangeEvent){
 
         errorMarkers.forEach(markerUpdate);
         refMarkers.forEach(markerUpdate);
-        editor.onChangeFrontMarker();
+        (<any>editor).onChangeFrontMarker();
     }
 
 }
@@ -220,7 +220,7 @@ function refactor(){
         var start = getpos(ref.ast.minChar);
         var end = getpos(ref.ast.limChar);
         var range = new AceRange(start.row, start.column, end.row, end.column);
-        editor.session.multiSelect.addRange(range);
+        editor.selection.addRange(range);
     });
 }
 
@@ -338,7 +338,7 @@ $(function(){
     editor.onTextInput = function (text){
         originalTextInput.call(editor, text);
         if(text == "."){
-            editor.commands.exec("autoComplete");
+            editor.execCommand("autoComplete");
 
         }else if (editor.getSession().getDocument().isNewLine(text)) {
             var lineNumber = editor.getCursorPosition().row;

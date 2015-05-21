@@ -176,7 +176,7 @@ define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete
             var start = getpos(ref.ast.minChar);
             var end = getpos(ref.ast.limChar);
             var range = new range_1.Range(start.row, start.column, end.row, end.column);
-            editor.session.multiSelect.addRange(range);
+            editor.selection.addRange(range);
         });
     }
     function showOccurrences() {
@@ -274,7 +274,7 @@ define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete
         editor.onTextInput = function (text) {
             originalTextInput.call(editor, text);
             if (text == ".") {
-                editor.commands.exec("autoComplete");
+                editor.execCommand("autoComplete");
             }
             else if (editor.getSession().getDocument().isNewLine(text)) {
                 var lineNumber = editor.getCursorPosition().row;

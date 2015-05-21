@@ -22,6 +22,8 @@
         "./FileService.ts",
         "./globals.d.ts",
         "./main.ts",
+        "./typings/ace/ace.d.ts",
+        "./typings/tsd.d.ts",
         "./utils.ts"
     ]
 }
