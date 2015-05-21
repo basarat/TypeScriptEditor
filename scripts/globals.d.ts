@@ -39,12 +39,6 @@ declare module "ace/lib/event_emitter" {
  * Our code that need to be TSified
  */
 
-
-declare module "EditorPosition" {
-    var ace: { EditorPosition: any };
-    export = ace;
-}
-
 declare module "ace/mode/typescript/typescriptServices" {
     var foo: { Services: any; TypeScript: any };
     export = foo;
