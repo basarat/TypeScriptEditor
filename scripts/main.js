@@ -1,4 +1,4 @@
-define(["require", "exports", "./utils", 'ace/ace', 'ace/range', 'AutoComplete', 'EditorPosition', 'CompilationService', 'FileService', "ace/lib/lang", 'ace/mode/typescript/typescriptServices', 'ace/mode/typescript/typescriptServices', 'ace/mode/typescript/lightHarness'], function (require, exports, utils_1, ace, range_1, AutoComplete_1, EditorPosition_1, CompilationService_1, FileService_1, lang_1, typescriptServices_1, typescriptServices_2, lightHarness_1) {
+define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete', 'EditorPosition', 'CompilationService', 'FileService', "ace/lib/lang", 'ace/mode/typescript/typescriptServices', 'ace/mode/typescript/typescriptServices', 'ace/mode/typescript/lightHarness'], function (require, exports, utils_1, ace, range_1, AutoComplete_1, EditorPosition_1, CompilationService_1, FileService_1, lang_1, typescriptServices_1, typescriptServices_2, lightHarness_1) {
     var aceEditorPosition = null;
     var appFileService = null;
     var editor = null;

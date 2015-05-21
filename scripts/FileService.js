@@ -1,4 +1,6 @@
-define(["require", "exports"], function(require, exports) {
+// Not using the AMD export built into typescript since we are using the partial
+// implementation of requirejs as present in ACE editor
+define(["require", "exports"], function (require, exports) {
     var FileService = (function () {
         function FileService(ajaxHost) {
             this.ajaxHost = ajaxHost;
@@ -10,10 +12,9 @@ define(["require", "exports"], function(require, exports) {
                 success: cb,
                 error: (function (jqXHR, textStatus) {
                     return console.log(textStatus);
-                })
-            });
+                }) });
         };
         return FileService;
     })();
-    exports.FileService = FileService;    
-})
+    exports.FileService = FileService;
+});

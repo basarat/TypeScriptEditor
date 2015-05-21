@@ -2,7 +2,7 @@ import {javascriptRun} from "./utils";
 
 import ace = require('ace/ace');
 import {Range as AceRange} from 'ace/range';
-import {AutoComplete} from 'AutoComplete';
+import {AutoComplete} from './AutoComplete';
 import lang = require("ace/lib/lang");
 import {EditorPosition} from 'EditorPosition';
 import {CompilationService} from 'CompilationService';
@@ -400,9 +400,3 @@ $(function(){
     });
 
 });
-
-
-
-
-
-

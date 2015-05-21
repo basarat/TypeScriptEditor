@@ -18,13 +18,23 @@ declare module "ace/lib/lang" {
     export = ace;
 }
 
-declare module "EditorPosition" {
-    var ace: { EditorPosition: any };
-    export = ace;
+declare module "ace/keyboard/hash_handler" {
+    var foo: { HashHandler: any };
+    export = foo;
 }
 
-declare module "AutoComplete" {
-    var ace: { AutoComplete: any };
+declare module "ace/lib/event_emitter" {
+    var foo: { EventEmitter: any };
+    export = foo;
+}
+
+/**
+ * Our code that need to be TSified
+ */
+
+
+declare module "EditorPosition" {
+    var ace: { EditorPosition: any };
     export = ace;
 }
 

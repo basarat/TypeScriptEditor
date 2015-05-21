@@ -1,4 +1,4 @@
-import EditorPositionModule = module('./EditorPosition');
+import EditorPositionModule = require('./EditorPosition');
 
 export class CompilationService{
 
