@@ -1,0 +1,26 @@
+{
+    "version": "1.5.0-alpha",
+    "compilerOptions": {
+        "target": "es5",
+        "module": "amd",
+        "declaration": false,
+        "noImplicitAny": false,
+        "removeComments": true,
+        "noLib": false,
+        "preserveConstEnums": true,
+        "suppressImplicitAnyIndexErrors": true
+    },
+    "filesGlob": [
+        "./**/*.ts",
+        "!./node_modules/**/*.ts"
+    ],
+    "files": [
+        "./AutoCompleteView.ts",
+        "./CompilationService.ts",
+        "./EditorPosition.ts",
+        "./FileService.ts",
+        "./globals.d.ts",
+        "./main.ts",
+        "./utils.ts"
+    ]
+}
