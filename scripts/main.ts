@@ -1,4 +1,4 @@
-import {javascriptRun} from "./utils";
+import {javascriptRun,readFile} from "./utils";
 
 import ace = require('ace/ace');
 import {Range as AceRange} from 'ace/range';
@@ -6,7 +6,6 @@ import {AutoComplete} from './AutoComplete';
 import lang = require("ace/lib/lang");
 import {EditorPosition} from 'EditorPosition';
 import {CompilationService} from 'CompilationService';
-import {FileService} from 'FileService';
 import {deferredCall} from "ace/lib/lang";
 
 import {Services} from 'ace/mode/typescript/typescriptServices';
@@ -14,7 +13,6 @@ import {TypeScript} from 'ace/mode/typescript/typescriptServices';
 import {TypeScriptLS} from 'ace/mode/typescript/lightHarness';
 
 var aceEditorPosition = null;
-var appFileService = null;
 var editor:AceAjax.Editor = null;
 var outputEditor:AceAjax.Editor = null;
 var typeCompilationService = null;
@@ -41,14 +39,14 @@ function loadTypeScriptLibrary(){
     typeScriptLS.addScript('start.d.ts',iArgs,true);
 
     libnames.forEach(function(libname){
-        appFileService.readFile(libname, function(content){
+        readFile(libname, function(content){
             typeScriptLS.addScript(libname, content.replace(/\r\n?/g,"\n"), true);
         });
     });
 }
 
 function loadFile(filename) {
-    appFileService.readFile(filename, function(content){
+    readFile(filename, function(content){
         selectFileName = filename;
         syncStop = true;
         var data= content.replace(/\r\n?/g,"\n");
@@ -378,7 +376,7 @@ $(function(){
     workerOnCreate(function(){//TODO use worker init event
 
         ["typescripts/lib.d.ts"].forEach(function(libname){
-            appFileService.readFile(libname, function(content){
+            readFile(libname, function(content){
                 var params = {
                     data: {
                         name:libname,

@@ -1,6 +1,5 @@
-define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete', 'EditorPosition', 'CompilationService', 'FileService', "ace/lib/lang", 'ace/mode/typescript/typescriptServices', 'ace/mode/typescript/typescriptServices', 'ace/mode/typescript/lightHarness'], function (require, exports, utils_1, ace, range_1, AutoComplete_1, EditorPosition_1, CompilationService_1, FileService_1, lang_1, typescriptServices_1, typescriptServices_2, lightHarness_1) {
+define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete', 'EditorPosition', 'CompilationService', "ace/lib/lang", 'ace/mode/typescript/typescriptServices', 'ace/mode/typescript/typescriptServices', 'ace/mode/typescript/lightHarness'], function (require, exports, utils_1, ace, range_1, AutoComplete_1, EditorPosition_1, CompilationService_1, lang_1, typescriptServices_1, typescriptServices_2, lightHarness_1) {
     var aceEditorPosition = null;
-    var appFileService = null;
     var editor = null;
     var outputEditor = null;
     var typeCompilationService = null;
@@ -20,13 +19,13 @@ define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete
         var iArgs = "interface IArguments {           [index: number]: any;        length: number;        callee: Function;    }";
         typeScriptLS.addScript('start.d.ts', iArgs, true);
         libnames.forEach(function (libname) {
-            appFileService.readFile(libname, function (content) {
+            utils_1.readFile(libname, function (content) {
                 typeScriptLS.addScript(libname, content.replace(/\r\n?/g, "\n"), true);
             });
         });
     }
     function loadFile(filename) {
-        appFileService.readFile(filename, function (content) {
+        utils_1.readFile(filename, function (content) {
             selectFileName = filename;
             syncStop = true;
             var data = content.replace(/\r\n?/g, "\n");
@@ -232,7 +231,6 @@ define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete
         }
     }
     $(function () {
-        appFileService = new FileService_1.FileService($);
         editor = ace.edit("editor");
         editor.setTheme("ace/theme/monokai");
         editor.getSession().setMode('ace/mode/typescript');
@@ -309,7 +307,7 @@ define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete
         });
         workerOnCreate(function () {
             ["typescripts/lib.d.ts"].forEach(function (libname) {
-                appFileService.readFile(libname, function (content) {
+                utils_1.readFile(libname, function (content) {
                     var params = {
                         data: {
                             name: libname,

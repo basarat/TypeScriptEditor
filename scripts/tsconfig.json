@@ -19,7 +19,6 @@
         "./AutoCompleteView.ts",
         "./CompilationService.ts",
         "./EditorPosition.ts",
-        "./FileService.ts",
         "./globals.d.ts",
         "./main.ts",
         "./typings/ace/ace.d.ts",
