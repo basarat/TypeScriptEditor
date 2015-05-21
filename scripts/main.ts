@@ -285,7 +285,6 @@ function workerOnCreate(func, timeout){
 
 
 $(function(){
-    appFileService = new FileService($);
     editor = ace.edit("editor");
     editor.setTheme("ace/theme/monokai");
     editor.getSession().setMode('ace/mode/typescript');
