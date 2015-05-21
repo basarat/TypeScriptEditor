@@ -15,6 +15,13 @@ Comments are mentioned in how they were modified, so you should be able to updat
 
 Also supports loading of custom definition files. Currently only loads lib.d.ts locally.
 
+# Contributing
+Just run locally using the following and visit whatever URL is printed:
+
+```
+node http-server
+```
+
 See Also
 -----------------
 

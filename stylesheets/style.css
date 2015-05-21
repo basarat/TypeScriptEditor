@@ -1,5 +1,6 @@
 body{
-
+    background: #333;
+    color: white;
 }
 
 .warp-container{
@@ -53,6 +54,7 @@ body{
 .langauge-title h2{
     padding: 5px 10px;
     font-size:14pt;
+    color: black;
     background: #eee;
     border:1px solid black;
     display:block;
