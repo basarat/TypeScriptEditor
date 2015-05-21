@@ -36,7 +36,7 @@ body{
 .editor-area{
     height: auto;
     padding-bottom: 50px;
-    height:70%;
+    height:calc(100% - 220px);
     /* margin-bottom:20px; */
 }
 
