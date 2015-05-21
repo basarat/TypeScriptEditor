@@ -131,6 +131,12 @@ body{
     visibility:hidden;
 }
 
-.ace_autocomplete_selected .label-type{
-    visibility:visible;
+.ace_autocomplete .label-type{
+    visibility:visible;    
+}
+.ace_autocomplete_selected {
+    background: grey;
+}
+.ace_autocomplete{
+    background: black;
 }
