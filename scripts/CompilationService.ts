@@ -1,12 +1,12 @@
-import EditorPositionModule = require('./EditorPosition');
+import {EditorPosition} from './EditorPosition';
 
 export class CompilationService{
 
-    public editorPos;// The ace control
-    public matchText;
+    public editorPos: EditorPosition;
+    public matchText: string;
 
     constructor(public editor,public ServiceShim){
-        this.editorPos = new EditorPositionModule.EditorPosition(editor);
+        this.editorPos = new EditorPosition(editor);
     }
 
     getCompilation (script, charpos, isMemberCompletion) {
@@ -16,7 +16,7 @@ export class CompilationService{
     };
 
     getCursorCompilation(script, cursor) {
-        var isMemberCompletion, matches, pos, text;
+        var isMemberCompletion, matches, pos, text:string;
         pos = this.editorPos.getPositionChars(cursor);
         text = this.editor.session.getLine(cursor.row).slice(0, cursor.column);
         isMemberCompletion = false;

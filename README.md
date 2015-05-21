@@ -22,6 +22,11 @@ Just run locally using the following and visit whatever URL is printed:
 node http-server
 ```
 
+# Research 
+## Autocomplete 
+Docs : https://github.com/ajaxorg/ace/wiki/How-to-enable-Autocomplete-in-the-Ace-editor
+Sample : http://plnkr.co/edit/6MVntVmXYUbjR0DI82Cr?p=preview
+
 See Also
 -----------------
 

@@ -1,9 +1,9 @@
-define(["require", "exports", './EditorPosition'], function (require, exports, EditorPositionModule) {
+define(["require", "exports", './EditorPosition'], function (require, exports, EditorPosition_1) {
     var CompilationService = (function () {
         function CompilationService(editor, ServiceShim) {
             this.editor = editor;
             this.ServiceShim = ServiceShim;
-            this.editorPos = new EditorPositionModule.EditorPosition(editor);
+            this.editorPos = new EditorPosition_1.EditorPosition(editor);
         }
         CompilationService.prototype.getCompilation = function (script, charpos, isMemberCompletion) {
             var compInfo;
