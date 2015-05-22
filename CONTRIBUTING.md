@@ -44,6 +44,9 @@ The `/lib/ace` folder here is same as `/lib/ace` from ace to make it easier to p
 Best found on github : https://github.com/ajaxorg/ace/tree/gh-pages/api
 Being served at : http://ace.c9.io/api/index.html
 
+## Mode
+https://github.com/ajaxorg/ace/wiki/Creating-or-Extending-an-Edit-Mode
+
 ## Autocomplete 
 Docs : https://github.com/ajaxorg/ace/wiki/How-to-enable-Autocomplete-in-the-Ace-editor
 Sample : http://plnkr.co/edit/6MVntVmXYUbjR0DI82Cr?p=preview
