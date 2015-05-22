@@ -5,7 +5,7 @@ import {Range as AceRange} from 'ace/range';
 import {AutoComplete} from './AutoComplete';
 import lang = require("ace/lib/lang");
 import {EditorPosition} from 'EditorPosition';
-import {CompilationService} from 'CompilationService';
+import {CompletionService} from './CompletionService';
 import {deferredCall} from "ace/lib/lang";
 
 export function defaultFormatCodeOptions(): ts.FormatCodeOptions {
@@ -304,7 +304,7 @@ $(function(){
     }]);
 
     aceEditorPosition = new EditorPosition(editor);
-    autoComplete = new AutoComplete(editor, selectFileName, new CompilationService(editor));
+    autoComplete = new AutoComplete(editor, selectFileName, new CompletionService(editor));
 
     // override editor onTextInput
     var originalTextInput = editor.onTextInput;

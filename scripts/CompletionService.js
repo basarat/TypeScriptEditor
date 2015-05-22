@@ -1,16 +1,16 @@
 define(["require", "exports", './EditorPosition', "./lib/ace/mode/typescript/tsProject"], function (require, exports, EditorPosition_1, tsProject_1) {
     var tsProject = tsProject_1.getTSProject();
-    var CompilationService = (function () {
-        function CompilationService(editor) {
+    var CompletionService = (function () {
+        function CompletionService(editor) {
             this.editor = editor;
             this.editorPos = new EditorPosition_1.EditorPosition(editor);
         }
-        CompilationService.prototype.getCompilation = function (script, charpos, isMemberCompletion) {
+        CompletionService.prototype.getCompilation = function (script, charpos, isMemberCompletion) {
             var compInfo = tsProject.languageService.getCompletionsAtPosition(script, charpos);
             return compInfo;
         };
         ;
-        CompilationService.prototype.getCursorCompilation = function (script, cursor) {
+        CompletionService.prototype.getCursorCompilation = function (script, cursor) {
             var isMemberCompletion, matches, pos, text;
             pos = this.editorPos.getPositionChars(cursor);
             text = this.editor.session.getLine(cursor.row).slice(0, cursor.column);
@@ -28,11 +28,11 @@ define(["require", "exports", './EditorPosition', "./lib/ace/mode/typescript/tsP
             return this.getCompilation(script, pos, isMemberCompletion);
         };
         ;
-        CompilationService.prototype.getCurrentPositionCompilation = function (script) {
+        CompletionService.prototype.getCurrentPositionCompilation = function (script) {
             return this.getCursorCompilation(script, this.editor.getCursorPosition());
         };
         ;
-        return CompilationService;
+        return CompletionService;
     })();
-    exports.CompilationService = CompilationService;
+    exports.CompletionService = CompletionService;
 });

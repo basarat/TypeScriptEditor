@@ -4,7 +4,7 @@ import {AutoCompleteView} from 'AutoCompleteView';
 import {Range as AceRange} from "ace/range";
 
 var oop = require("ace/lib/oop");
-import {CompilationService} from "./CompilationService";
+import {CompletionService} from "./CompletionService";
 
 export class AutoComplete {
     listElement: any;
@@ -18,7 +18,7 @@ export class AutoComplete {
     // From EventEmitter base class: 
     _emit: any;
 
-    constructor(public editor, public script,  public compilationService: CompilationService){
+    constructor(public editor, public script,  public completionService: CompletionService){
         oop.implement(this, EventEmitter);
         
         this.handler = new HashHandler();
@@ -29,13 +29,13 @@ export class AutoComplete {
         
         
         this.handler.attach = () => {
-            editor.addEventListener("change", this.refreshCompilation);
+            editor.addEventListener("change", this.refreshCompletions);
             this._emit("attach", {sender: this});
             this._active = true;
         };
     
         this.handler.detach = () => {
-            editor.removeEventListener("change", this.refreshCompilation);
+            editor.removeEventListener("change", this.refreshCompletions);
             this.view.hide();
             this._emit("detach", {sender: this});
             this._active = false;
@@ -99,7 +99,7 @@ export class AutoComplete {
                 self.deactivate();
             },
             insertComplete:(editor) => {
-                editor.removeEventListener("change", self.refreshCompilation);
+                editor.removeEventListener("change", self.refreshCompletions);
                 var curr = self.view.current();
     
                 for(var i = 0; i<  self.inputText.length; i++){
@@ -135,8 +135,8 @@ export class AutoComplete {
     }
 
     compilation = (cursor) => {
-        var compilationInfo = this.compilationService.getCursorCompilation(this.scriptName, cursor);
-        var text  = this.compilationService.matchText;
+        var compilationInfo = this.completionService.getCursorCompilation(this.scriptName, cursor);
+        var text  = this.completionService.matchText;
         var coords = this.editor.renderer.textToScreenCoordinates(cursor.row, cursor.column - text.length);
 
         this.view.setPosition(coords);
@@ -177,7 +177,7 @@ export class AutoComplete {
         return compilations.length;
     };
 
-    refreshCompilation = (e:AceAjax.EditorChangeEvent) => {
+    refreshCompletions = (e:AceAjax.EditorChangeEvent) => {
         var cursor = this.editor.getCursorPosition();
         var data = e;
         var newText = this.editor.getSession().getTextRange(new AceRange(data.start.row, data.start.column, data.end.row, data.end.column));

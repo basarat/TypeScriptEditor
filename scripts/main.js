@@ -1,4 +1,4 @@
-define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete', 'EditorPosition', 'CompilationService', "ace/lib/lang", "./lib/ace/mode/typescript/tsProject"], function (require, exports, utils_1, ace, range_1, AutoComplete_1, EditorPosition_1, CompilationService_1, lang_1, tsProject_1) {
+define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete', 'EditorPosition', './CompletionService', "ace/lib/lang", "./lib/ace/mode/typescript/tsProject"], function (require, exports, utils_1, ace, range_1, AutoComplete_1, EditorPosition_1, CompletionService_1, lang_1, tsProject_1) {
     function defaultFormatCodeOptions() {
         return {
             IndentSize: 4,
@@ -246,7 +246,7 @@ define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete
                 multiSelectAction: "forEach"
             }]);
         aceEditorPosition = new EditorPosition_1.EditorPosition(editor);
-        autoComplete = new AutoComplete_1.AutoComplete(editor, selectFileName, new CompilationService_1.CompilationService(editor));
+        autoComplete = new AutoComplete_1.AutoComplete(editor, selectFileName, new CompletionService_1.CompletionService(editor));
         var originalTextInput = editor.onTextInput;
         editor.onTextInput = function (text) {
             originalTextInput.call(editor, text);

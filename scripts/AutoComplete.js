@@ -1,11 +1,11 @@
 define(["require", "exports", 'ace/keyboard/hash_handler', "ace/lib/event_emitter", 'AutoCompleteView', "ace/range"], function (require, exports, hash_handler_1, event_emitter_1, AutoCompleteView_1, range_1) {
     var oop = require("ace/lib/oop");
     var AutoComplete = (function () {
-        function AutoComplete(editor, script, compilationService) {
+        function AutoComplete(editor, script, completionService) {
             var _this = this;
             this.editor = editor;
             this.script = script;
-            this.compilationService = compilationService;
+            this.completionService = completionService;
             this.isActive = function () {
                 return _this._active;
             };
@@ -21,8 +21,8 @@ define(["require", "exports", 'ace/keyboard/hash_handler', "ace/lib/event_emitte
                 _this.view.hide();
             };
             this.compilation = function (cursor) {
-                var compilationInfo = _this.compilationService.getCursorCompilation(_this.scriptName, cursor);
-                var text = _this.compilationService.matchText;
+                var compilationInfo = _this.completionService.getCursorCompilation(_this.scriptName, cursor);
+                var text = _this.completionService.matchText;
                 var coords = _this.editor.renderer.textToScreenCoordinates(cursor.row, cursor.column - text.length);
                 _this.view.setPosition(coords);
                 _this.inputText = text;
@@ -54,7 +54,7 @@ define(["require", "exports", 'ace/keyboard/hash_handler', "ace/lib/event_emitte
                 _this.showCompilation(compilations);
                 return compilations.length;
             };
-            this.refreshCompilation = function (e) {
+            this.refreshCompletions = function (e) {
                 var cursor = _this.editor.getCursorPosition();
                 var data = e;
                 var newText = _this.editor.getSession().getTextRange(new range_1.Range(data.start.row, data.start.column, data.end.row, data.end.column));
@@ -106,12 +106,12 @@ define(["require", "exports", 'ace/keyboard/hash_handler', "ace/lib/event_emitte
             this._active = false;
             this.inputText = '';
             this.handler.attach = function () {
-                editor.addEventListener("change", _this.refreshCompilation);
+                editor.addEventListener("change", _this.refreshCompletions);
                 _this._emit("attach", { sender: _this });
                 _this._active = true;
             };
             this.handler.detach = function () {
-                editor.removeEventListener("change", _this.refreshCompilation);
+                editor.removeEventListener("change", _this.refreshCompletions);
                 _this.view.hide();
                 _this._emit("detach", { sender: _this });
                 _this._active = false;
@@ -162,7 +162,7 @@ define(["require", "exports", 'ace/keyboard/hash_handler', "ace/lib/event_emitte
                     self.deactivate();
                 },
                 insertComplete: function (editor) {
-                    editor.removeEventListener("change", self.refreshCompilation);
+                    editor.removeEventListener("change", self.refreshCompletions);
                     var curr = self.view.current();
                     for (var i = 0; i < self.inputText.length; i++) {
                         editor.remove("left");

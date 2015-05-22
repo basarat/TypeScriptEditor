@@ -2,7 +2,7 @@ import {EditorPosition} from './EditorPosition';
 import {getTSProject} from "./lib/ace/mode/typescript/tsProject";
 var tsProject = getTSProject();
 
-export class CompilationService{
+export class CompletionService{
 
     public editorPos: EditorPosition;
     public matchText: string;

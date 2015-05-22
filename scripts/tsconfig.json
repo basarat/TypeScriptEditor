@@ -17,7 +17,7 @@
     "files": [
         "./AutoComplete.ts",
         "./AutoCompleteView.ts",
-        "./CompilationService.ts",
+        "./CompletionService.ts",
         "./EditorPosition.ts",
         "./globals.d.ts",
         "./lib/ace/mode/typescript/DocumentPositionUtil.ts",
