@@ -39,7 +39,7 @@ declare module "ace/lib/event_emitter" {
  * Our code that need to be TSified
  */
 
-declare module "ace/mode/typescript/typescriptServices" {
+declare module "ace/mode/typescript/typescriptServicesOld" {
     var foo: { Services: any; TypeScript: any };
     export = foo;
 }

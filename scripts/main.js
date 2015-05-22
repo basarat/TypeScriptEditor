@@ -1,11 +1,11 @@
-define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete', 'EditorPosition', 'CompilationService', "ace/lib/lang", 'ace/mode/typescript/typescriptServices', 'ace/mode/typescript/typescriptServices', 'ace/mode/typescript/lightHarness'], function (require, exports, utils_1, ace, range_1, AutoComplete_1, EditorPosition_1, CompilationService_1, lang_1, typescriptServices_1, typescriptServices_2, lightHarness_1) {
+define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete', 'EditorPosition', 'CompilationService', "ace/lib/lang", 'ace/mode/typescript/typescriptServicesOld', 'ace/mode/typescript/typescriptServicesOld', 'ace/mode/typescript/lightHarness'], function (require, exports, utils_1, ace, range_1, AutoComplete_1, EditorPosition_1, CompilationService_1, lang_1, typescriptServicesOld_1, typescriptServicesOld_2, lightHarness_1) {
     var aceEditorPosition = null;
     var editor = null;
     var outputEditor = null;
     var typeCompilationService = null;
     var docUpdateCount = 0;
     var typeScriptLS = new lightHarness_1.TypeScriptLS();
-    var ServicesFactory = new typescriptServices_1.Services.TypeScriptServicesFactory();
+    var ServicesFactory = new typescriptServicesOld_1.Services.TypeScriptServicesFactory();
     var serviceShim = ServicesFactory.createLanguageServiceShim(typeScriptLS);
     var selectFileName = "";
     var syncStop = false;
@@ -91,10 +91,10 @@ define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete
         var end = aceEditorPosition.getPositionChars(data.end);
         var newText = editor.getSession().getTextRange(new range_1.Range(data.start.row, data.start.column, data.end.row, data.end.column));
         if (action == "insert") {
-            editLanguageService(script, new typescriptServices_1.Services.TextEdit(start, start, newText));
+            editLanguageService(script, new typescriptServicesOld_1.Services.TextEdit(start, start, newText));
         }
         else if (action == "remove") {
-            editLanguageService(script, new typescriptServices_1.Services.TextEdit(start, end, ""));
+            editLanguageService(script, new typescriptServicesOld_1.Services.TextEdit(start, end, ""));
         }
         else {
             console.error('unknown action:', action);
@@ -130,7 +130,7 @@ define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete
             }
             ;
         }
-        var option = new typescriptServices_1.Services.EditorOptions();
+        var option = new typescriptServicesOld_1.Services.EditorOptions();
         option.NewLineCharacter = "\n";
         var smartIndent = serviceShim.languageService.getSmartIndentAtLineNumber(selectFileName, lineNumber, option);
         if (preIndent > smartIndent) {
@@ -196,7 +196,7 @@ define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete
             Close: function () {
             }
         };
-        var compiler = new typescriptServices_2.TypeScript.TypeScriptCompiler(outfile, outerr, new typescriptServices_2.TypeScript.NullLogger(), new typescriptServices_2.TypeScript.CompilationSettings());
+        var compiler = new typescriptServicesOld_2.TypeScript.TypeScriptCompiler(outfile, outerr, new typescriptServicesOld_2.TypeScript.NullLogger(), new typescriptServicesOld_2.TypeScript.CompilationSettings());
         compiler.addUnit(typeScriptContent, "output.js", false);
         compiler.typeCheck();
         compiler.emit(false, function (name) {
@@ -259,7 +259,7 @@ define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete
             }
             else if (editor.getSession().getDocument().isNewLine(text)) {
                 var lineNumber = editor.getCursorPosition().row;
-                var option = new typescriptServices_1.Services.EditorOptions();
+                var option = new typescriptServicesOld_1.Services.EditorOptions();
                 option.NewLineCharacter = "\n";
                 var indent = serviceShim.languageService.getSmartIndentAtLineNumber(selectFileName, lineNumber, option);
                 if (indent > 0) {

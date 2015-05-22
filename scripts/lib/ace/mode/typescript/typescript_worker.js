@@ -37,8 +37,9 @@ define(function(require, exports, module) {
     var Document = require("../../document").Document;
     
     var DocumentPositionUtil = require('./DocumentPositionUtil').DocumentPositionUtil;
-    var Services = require('./typescriptServices').Services;
-    var TypeScript = require('./typescriptServices').TypeScript;
+    var workerSVC = require('./typescriptServicesOld');  
+    var Services = workerSVC.Services;
+    var TypeScript = workerSVC.TypeScript;
     var TypeScriptLS = require('./lightHarness').TypeScriptLS;
 
     var TypeScriptWorker = exports.TypeScriptWorker = function(sender) {

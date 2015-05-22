@@ -8,8 +8,8 @@ import {EditorPosition} from 'EditorPosition';
 import {CompilationService} from 'CompilationService';
 import {deferredCall} from "ace/lib/lang";
 
-import {Services} from 'ace/mode/typescript/typescriptServices';
-import {TypeScript} from 'ace/mode/typescript/typescriptServices';
+import {Services} from 'ace/mode/typescript/typescriptServicesOld';
+import {TypeScript} from 'ace/mode/typescript/typescriptServicesOld';
 import {TypeScriptLS} from 'ace/mode/typescript/lightHarness';
 
 var aceEditorPosition = null;

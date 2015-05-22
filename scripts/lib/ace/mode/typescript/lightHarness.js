@@ -12,8 +12,9 @@ define(function(require, exports, module) {
         d.prototype = new __();
     };
 
-    var Services = require('./typescriptServices').Services;
-    var TypeScript = require('./typescriptServices').TypeScript;
+    var workerSVC = require('./typescriptServicesOld');  
+    var Services = workerSVC.Services;
+    var TypeScript = workerSVC.TypeScript;
 
     var ScriptInfo = (function () {
         function ScriptInfo(name, content, isResident, maxScriptVersions) {
