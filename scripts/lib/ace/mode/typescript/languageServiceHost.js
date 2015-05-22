@@ -34,6 +34,9 @@ define(["require", "exports"], function (require, exports) {
         function updateScript(fileName, content) {
             var script = fileNameToScript[fileName];
             if (script) {
+                if (script.getContent() == content) {
+                    return;
+                }
                 script.updateContent(content);
                 return;
             }

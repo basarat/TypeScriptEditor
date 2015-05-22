@@ -161,6 +161,10 @@ export function createLanguageServiceHost(currentDir: string, defaultLibFileName
     function updateScript(fileName: string, content: string) {
         var script = fileNameToScript[fileName];
         if (script) {
+            if(script.getContent() == content){
+                return;
+            }
+        
             script.updateContent(content);
             return;
         }
