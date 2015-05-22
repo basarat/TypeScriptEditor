@@ -1,5 +1,20 @@
 body{
+    background: #333;
+    color: white;
+}
 
+::-webkit-scrollbar {
+   width: 8px;
+   height: 8px;
+}
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+    background: #222425;
+}
+::-webkit-scrollbar-thumb {
+   background: #AAA;
+   border-radius: 5px;
+   box-shadow: 0 0 1px black inset;
 }
 
 .warp-container{
@@ -35,7 +50,7 @@ body{
 .editor-area{
     height: auto;
     padding-bottom: 50px;
-    height:70%;
+    height:calc(100% - 220px);
     /* margin-bottom:20px; */
 }
 
@@ -53,6 +68,7 @@ body{
 .langauge-title h2{
     padding: 5px 10px;
     font-size:14pt;
+    color: black;
     background: #eee;
     border:1px solid black;
     display:block;
@@ -129,6 +145,12 @@ body{
     visibility:hidden;
 }
 
-.ace_autocomplete_selected .label-type{
-    visibility:visible;
+.ace_autocomplete .label-type{
+    visibility:visible;    
+}
+.ace_autocomplete_selected {
+    background: grey;
+}
+.ace_autocomplete{
+    background: black;
 }

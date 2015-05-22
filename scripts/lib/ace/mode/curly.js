@@ -40,7 +40,6 @@ define(function(require, exports, module) {
 var oop = require("../lib/oop");
 // defines the parent mode
 var HtmlMode = require("./html").Mode;
-var Tokenizer = require("../tokenizer").Tokenizer;
 var MatchingBraceOutdent = require("./matching_brace_outdent").MatchingBraceOutdent;
 var HtmlHighlightRules = require("./html_highlight_rules").HtmlHighlightRules;
 var HtmlFoldMode = require("./folding/html").FoldMode;
@@ -49,39 +48,15 @@ var HtmlFoldMode = require("./folding/html").FoldMode;
 var CurlyHighlightRules = require("./curly_highlight_rules").CurlyHighlightRules;
 
 var Mode = function() {
-    // set everything up
-    var highlighter = new CurlyHighlightRules();
+    HtmlMode.call(this);
+    this.HighlightRules = CurlyHighlightRules;
     this.$outdent = new MatchingBraceOutdent();
     this.foldingRules = new HtmlFoldMode();
-
-    this.$tokenizer = new Tokenizer(highlighter.getRules());
 };
 oop.inherits(Mode, HtmlMode);
 
 (function() {
-    // Extra logic goes here--we won't be covering all of this
-
-    /* These are all optional pieces of code!
-    this.getNextLineIndent = function(state, line, tab) {
-        var indent = this.$getIndent(line);
-        return indent;
-    };
-
-    this.checkOutdent = function(state, line, input) {
-        return this.$outdent.checkOutdent(line, input);
-    };
-
-    this.autoOutdent = function(state, doc, row) {
-        this.$outdent.autoOutdent(doc, row);
-    };
-
-    this.createWorker = function(session) {
-        var worker = new WorkerClient(["ace"], "ace/mode/mynew_worker", "NewWorker");
-        worker.attachToDocument(session.getDocument());
-
-        return worker;
-    };
-    */
+    this.$id = "ace/mode/curly";
 }).call(Mode.prototype);
 
 exports.Mode = Mode;

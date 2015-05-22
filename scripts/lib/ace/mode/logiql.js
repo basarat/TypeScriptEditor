@@ -33,7 +33,6 @@ define(function(require, exports, module) {
 
 var oop = require("../lib/oop");
 var TextMode = require("./text").Mode;
-var Tokenizer = require("../tokenizer").Tokenizer;
 var LogiQLHighlightRules = require("./logiql_highlight_rules").LogiQLHighlightRules;
 var FoldMode = require("./folding/coffee").FoldMode;
 var TokenIterator = require("../token_iterator").TokenIterator;
@@ -42,9 +41,8 @@ var CstyleBehaviour = require("./behaviour/cstyle").CstyleBehaviour;
 var MatchingBraceOutdent = require("./matching_brace_outdent").MatchingBraceOutdent;
 
 var Mode = function() {
-    var highlighter = new LogiQLHighlightRules();
+    this.HighlightRules = LogiQLHighlightRules;
     this.foldingRules = new FoldMode();
-    this.$tokenizer = new Tokenizer(highlighter.getRules());
     this.$outdent = new MatchingBraceOutdent();
     this.$behaviour = new CstyleBehaviour();
 };
@@ -57,7 +55,7 @@ oop.inherits(Mode, TextMode);
     this.getNextLineIndent = function(state, line, tab) {
         var indent = this.$getIndent(line);
 
-        var tokenizedLine = this.$tokenizer.getLineTokens(line, state);
+        var tokenizedLine = this.getTokenizer().getLineTokens(line, state);
         var tokens = tokenizedLine.tokens;
         var endState = tokenizedLine.state;
         if (/comment|string/.test(endState))  
@@ -134,7 +132,7 @@ oop.inherits(Mode, TextMode);
         var row = it.getCurrentTokenRow();
         return new Range(row, col, row, col + tok.value.length);
     };
-    // Extra logic goes here.
+    this.$id = "ace/mode/logiql";
 }).call(Mode.prototype);
 
 exports.Mode = Mode;

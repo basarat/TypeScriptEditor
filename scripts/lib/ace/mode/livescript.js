@@ -9,6 +9,7 @@ define(function(require, exports, module){
       if (that = require('../mode/matching_brace_outdent')) {
         this.$outdent = new that.MatchingBraceOutdent;
       }
+      this.$id = "ace/mode/livescript";
     }
     indenter = RegExp('(?:[({[=:]|[-~]>|\\b(?:e(?:lse|xport)|d(?:o|efault)|t(?:ry|hen)|finally|import(?:\\s*all)?|const|var|let|new|catch(?:\\s*' + identifier + ')?))\\s*$');
     prototype.getNextLineIndent = function(state, line, tab){
@@ -51,8 +52,7 @@ define(function(require, exports, module){
   }(require('../mode/text').Mode));
   keywordend = '(?![$\\w]|-[A-Za-z]|\\s*:(?![:=]))';
   stringfill = {
-    token: 'string',
-    regex: '.+'
+    defaultToken: 'string'
   };
   LiveScriptMode.Rules = {
     start: [
@@ -145,7 +145,7 @@ define(function(require, exports, module){
         next: 'key'
       }, {
         token: 'keyword.operator',
-        regex: '\\S+'
+        regex: '[\\^!|&%+\\-]+'
       }, {
         token: 'text',
         regex: '\\s+'
@@ -163,8 +163,7 @@ define(function(require, exports, module){
         token: 'comment.regex',
         regex: '\\s+(?:#.*)?'
       }, {
-        token: 'string.regex',
-        regex: '\\S+'
+        defaultToken: 'string.regex'
       }
     ],
     key: [
@@ -177,7 +176,7 @@ define(function(require, exports, module){
         next: 'start'
       }, {
         token: 'text',
-        regex: '.',
+        regex: '',
         next: 'start'
       }
     ],
@@ -187,8 +186,7 @@ define(function(require, exports, module){
         regex: '.*?\\*/',
         next: 'start'
       }, {
-        token: 'comment.doc',
-        regex: '.+'
+        defaultToken: 'comment.doc'
       }
     ],
     qdoc: [

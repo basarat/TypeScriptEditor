@@ -1,0 +1,33 @@
+{
+    "version": "1.5.0-alpha",
+    "compilerOptions": {
+        "target": "es5",
+        "module": "amd",
+        "declaration": false,
+        "noImplicitAny": false,
+        "removeComments": true,
+        "noLib": false,
+        "preserveConstEnums": true,
+        "suppressImplicitAnyIndexErrors": true
+    },
+    "filesGlob": [
+        "./**/*.ts",
+        "!./node_modules/**/*.ts"
+    ],
+    "files": [
+        "./AutoComplete.ts",
+        "./AutoCompleteView.ts",
+        "./CompletionService.ts",
+        "./EditorPosition.ts",
+        "./globals.d.ts",
+        "./lib/ace/mode/typescript/DocumentPositionUtil.ts",
+        "./lib/ace/mode/typescript/languageServiceHost.ts",
+        "./lib/ace/mode/typescript/tsProject.ts",
+        "./lib/ace/mode/typescript/typescriptService.d.ts",
+        "./lib/ace/mode/typescript/typescript_worker.ts",
+        "./main.ts",
+        "./typings/ace/ace.d.ts",
+        "./typings/tsd.d.ts",
+        "./utils.ts"
+    ]
+}

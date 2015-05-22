@@ -44,6 +44,8 @@
 
 define(function(require, exports, module) {
 "use strict";
+var keys = require("../../lib/keys");
+
 /**
  * Gets a map of keyboard shortcuts to command names for the current platform.
  * @author <a href="mailto:matthewkastor@gmail.com">
@@ -60,27 +62,30 @@ define(function(require, exports, module) {
  * //     {'command' : aCommand, 'key' : 'Control-d'}
  * // ]
  */
-module.exports.getEditorKeybordShortcuts = function getEditorKeybordShortcuts (editor) {
-    var commands = editor.commands.byName;
-    var commandName;
-    var key;
-    var platform = editor.commands.platform;
-    var kb = [];
-    for (commandName in commands) {
-        try {
-            key = commands[commandName].bindKey[platform];
-            if (key) {
-               kb.push({
-                    'command' : commandName,
-                    'key' : key
-               });
-            }
-        } catch (e) {
-            // errors on properties without bindKey we don't want them
-            // so the errors don't need handling.
+module.exports.getEditorKeybordShortcuts = function(editor) {
+    var KEY_MODS = keys.KEY_MODS;
+    var keybindings = [];
+    var commandMap = {};
+    editor.keyBinding.$handlers.forEach(function(handler) {
+        var ckb = handler.commandKeyBinding;
+        for (var i in ckb) {
+            var key = i.replace(/(^|-)\w/g, function(x) { return x.toUpperCase(); });
+            var commands = ckb[i];
+            if (!Array.isArray(commands))
+                commands = [commands];
+            commands.forEach(function(command) {
+                if (typeof command != "string")
+                    command  = command.name
+                if (commandMap[command]) {
+                    commandMap[command].key += "|" + key;
+                } else {
+                    commandMap[command] = {key: key, command: command};
+                    keybindings.push(commandMap[command]);
+                }         
+            });
         }
-    }
-    return kb;
+    });
+    return keybindings;
 };
 
 });

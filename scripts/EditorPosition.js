@@ -1,8 +1,8 @@
-define(["require", "exports"], function(require, exports) {
+define(["require", "exports"], function (require, exports) {
     var EditorPosition = (function () {
         function EditorPosition(editor) {
-            this.editor = editor;
             var _this = this;
+            this.editor = editor;
             this.getPositionChars = function (pos) {
                 var doc;
                 doc = editor.getSession().getDocument();
@@ -49,7 +49,7 @@ define(["require", "exports"], function(require, exports) {
             };
         }
         EditorPosition.prototype.getLinesChars = function (lines) {
-            var count, _this = this;
+            var count;
             count = 0;
             lines.forEach(function (line) {
                 return count += line.length + 1;
@@ -64,9 +64,9 @@ define(["require", "exports"], function(require, exports) {
             lines = doc.getAllLines();
             count = 0;
             row = 0;
-            for(i in lines) {
+            for (i in lines) {
                 line = lines[i];
-                if(chars < (count + (line.length + 1))) {
+                if (chars < (count + (line.length + 1))) {
                     return {
                         row: row,
                         column: chars - count
@@ -82,5 +82,5 @@ define(["require", "exports"], function(require, exports) {
         };
         return EditorPosition;
     })();
-    exports.EditorPosition = EditorPosition;    
-})
+    exports.EditorPosition = EditorPosition;
+});

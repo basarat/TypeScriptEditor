@@ -36,7 +36,6 @@ define(function(require, exports, module) {
 "use strict";
 
 var EditSession = require("../edit_session").EditSession;
-var Tokenizer = require("../tokenizer").Tokenizer;
 var LogiQLMode = require("./logiql").Mode;
 var assert = require("../test/assertions");
 
@@ -46,10 +45,10 @@ module.exports = {
     },
 
     "test: toggle comment lines should prepend '//' to each line" : function() {
-        var session = new EditSession(["  abc", "cde", "fg"]);
+        var session = new EditSession(["    abc", "cde", "fg"]);
 
         this.mode.toggleCommentLines("start", session, 0, 1);
-        assert.equal(["//   abc", "// cde", "fg"].join("\n"), session.toString());
+        assert.equal(["//     abc", "// cde", "fg"].join("\n"), session.toString());
     },
 
     "test: auto indent after ->" : function() {
@@ -63,7 +62,7 @@ module.exports = {
     "test: no auto indent in multi line comment" : function() {
         assert.equal("", this.mode.getNextLineIndent("start", "/* -->", "  "));
         assert.equal("  ", this.mode.getNextLineIndent("start", "  /* ->", "    "));
-        assert.equal("  ", this.mode.getNextLineIndent("comment.block0", "  abcd", "  "));
+        assert.equal("  ", this.mode.getNextLineIndent("comment.block", "  abcd", "  "));
     },
 
     "test: no auto indent after -> in single line comment" : function() {

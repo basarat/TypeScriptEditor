@@ -32,7 +32,6 @@ define(function(require, exports, module) {
 
 var oop = require("../lib/oop");
 var HtmlMode = require("./html").Mode;
-var Tokenizer = require("../tokenizer").Tokenizer;
 var HtmlHighlightRules = require("./html_highlight_rules").HtmlHighlightRules;
 var TextHighlightRules = require("./text_highlight_rules").TextHighlightRules;
 
@@ -107,11 +106,14 @@ var DjangoHtmlHighlightRules = function() {
 oop.inherits(DjangoHtmlHighlightRules, HtmlHighlightRules);
 
 var Mode = function() {
-    var highlighter = new DjangoHtmlHighlightRules();
-    this.$tokenizer = new Tokenizer(highlighter.getRules());
-    this.$embeds = highlighter.getEmbeds();
+    HtmlMode.call(this);
+    this.HighlightRules = DjangoHtmlHighlightRules;
 };
 oop.inherits(Mode, HtmlMode);
+
+(function() {
+    this.$id = "ace/mode/django";
+}).call(Mode.prototype);
 
 exports.Mode = Mode;
 });

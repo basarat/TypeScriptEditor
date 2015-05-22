@@ -51,12 +51,23 @@ var TextHighlightRules = function() {
 (function() {
 
     this.addRules = function(rules, prefix) {
+        if (!prefix) {
+            for (var key in rules)
+                this.$rules[key] = rules[key];
+            return;
+        }
         for (var key in rules) {
             var state = rules[key];
             for (var i = 0; i < state.length; i++) {
                 var rule = state[i];
-                if (rule.next) {
-                    rule.next = prefix + rule.next;
+                if (rule.next || rule.onMatch) {
+                    if (typeof rule.next != "string") {
+                        if (rule.nextState && rule.nextState.indexOf(prefix) !== 0)
+                            rule.nextState = prefix + rule.nextState;
+                    } else {
+                        if (rule.next.indexOf(prefix) !== 0)
+                            rule.next = prefix + rule.next;
+                    }
                 }
             }
             this.$rules[prefix + key] = state;
@@ -68,7 +79,9 @@ var TextHighlightRules = function() {
     };
 
     this.embedRules = function (HighlightRules, prefix, escapeRules, states, append) {
-        var embedRules = new HighlightRules().getRules();
+        var embedRules = typeof HighlightRules == "function"
+            ? new HighlightRules().getRules()
+            : HighlightRules;
         if (states) {
             for (var i = 0; i < states.length; i++)
                 states[i] = prefix + states[i];
@@ -89,22 +102,21 @@ var TextHighlightRules = function() {
         if (!this.$embeds)
             this.$embeds = [];
         this.$embeds.push(prefix);
-    }
+    };
 
     this.getEmbeds = function() {
         return this.$embeds;
     };
 
     var pushState = function(currentState, stack) {
-        if (currentState != "start")
+        if (currentState != "start" || stack.length)
             stack.unshift(this.nextState, currentState);
         return this.nextState;
     };
     var popState = function(currentState, stack) {
-        if (stack[0] !== currentState)
-            return "start";
+        // if (stack[0] === currentState)
         stack.shift();
-        return stack.shift();
+        return stack.shift() || "start";
     };
 
     this.normalizeRules = function() {
@@ -131,7 +143,14 @@ var TextHighlightRules = function() {
                 }
                 var next = rule.next || rule.push;
                 if (next && Array.isArray(next)) {
-                    var stateName = rule.stateName || (rule.token + id++);
+                    var stateName = rule.stateName;
+                    if (!stateName)  {
+                        stateName = rule.token;
+                        if (typeof stateName != "string")
+                            stateName = stateName[0] || "";
+                        if (rules[stateName])
+                            stateName += id++;
+                    }
                     rules[stateName] = next;
                     rule.next = stateName;
                     processState(stateName);
@@ -169,11 +188,18 @@ var TextHighlightRules = function() {
                     // skip included rules since they are already processed
                     //i += args.length - 3;
                     i--;
-                    toInsert = null
+                    toInsert = null;
+                }
+                
+                if (rule.keywordMap) {
+                    rule.token = this.createKeywordMapper(
+                        rule.keywordMap, rule.defaultToken || "text", rule.caseInsensitive
+                    );
+                    delete rule.defaultToken;
                 }
             }
-        };
-        Object.keys(rules).forEach(processState);
+        }
+        Object.keys(rules).forEach(processState, this);
     };
 
     this.createKeywordMapper = function(map, defaultToken, ignoreCase, splitChar) {
@@ -186,11 +212,17 @@ var TextHighlightRules = function() {
             for (var i = list.length; i--; )
                 keywords[list[i]] = className;
         });
+        // in old versions of opera keywords["__proto__"] sets prototype
+        // even on objects with __proto__=null
+        if (Object.getPrototypeOf(keywords)) {
+            keywords.__proto__ = null;
+        }
+        this.$keywordList = Object.keys(keywords);
         map = null;
         return ignoreCase
             ? function(value) {return keywords[value.toLowerCase()] || defaultToken }
             : function(value) {return keywords[value] || defaultToken };
-    }
+    };
 
     this.getKeywords = function() {
         return this.$keywords;

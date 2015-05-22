@@ -42,23 +42,20 @@ define(function(require, exports, module) {
 
 var oop = require("../lib/oop");
 var CMode = require("./c_cpp").Mode;
-var Tokenizer = require("../tokenizer").Tokenizer;
 var DartHighlightRules = require("./dart_highlight_rules").DartHighlightRules;
 var CStyleFoldMode = require("./folding/cstyle").FoldMode;
 
 var Mode = function() {
     CMode.call(this);
-    var highlighter = new DartHighlightRules();
+    this.HighlightRules = DartHighlightRules;
     this.foldingRules = new CStyleFoldMode();
-
-    this.$tokenizer = new Tokenizer(highlighter.getRules());
 };
 oop.inherits(Mode, CMode);
 
-(function() {
-    // Extra logic goes here. 
+(function() { 
     this.lineCommentStart = "//";
     this.blockComment = {start: "/*", end: "*/"};
+    this.$id = "ace/mode/dart";
 }).call(Mode.prototype);
 
 exports.Mode = Mode;

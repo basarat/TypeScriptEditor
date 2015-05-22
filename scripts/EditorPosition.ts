@@ -62,10 +62,9 @@ export class EditorPosition{
     }
 
     getLinesChars(lines){
-        var count,
-            _this = this;
+        var count            
         count = 0;
-        lines.forEach(function(line) {
+        lines.forEach((line) => {
             return count += line.length + 1;
         });
         return count;

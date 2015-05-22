@@ -24,6 +24,7 @@ var testNames = [
     "ace/incremental_search_test",
     "ace/keyboard/emacs_test",
     "ace/keyboard/keybinding_test",
+    "ace/keyboard/vim_test",
     "ace/layer/text_test",
     "ace/lib/event_emitter_test",
     "ace/mode/coffee/parser_test",
@@ -42,8 +43,11 @@ var testNames = [
     "ace/mode/folding/pythonic_test",
     "ace/mode/folding/xml_test",
     "ace/mode/folding/coffee_test",
+    "ace/mode/behaviour/behaviour_test",
     "ace/multi_select_test",
+    "ace/mouse/mouse_handler_test",
     "ace/occur_test",
+    "ace/placeholder_test",
     "ace/range_test",
     "ace/range_list_test",
     "ace/search_test",
@@ -68,6 +72,8 @@ document.body.appendChild(nav);
 if (location.search)
     testNames = location.search.substr(1).split(",")
 
+var filter = location.hash.substr(1);
+
 require(testNames, function() {
     var tests = testNames.map(function(x) {
         var module = require(x);
@@ -77,6 +83,12 @@ require(testNames, function() {
 
     async.list(tests)
         .expand(function(test) {
+            if (filter) {
+                Object.keys(test).forEach(function(method) {
+                    if (method.match(/^>?test/) && !method.match(filter))
+                        test[method] = undefined;
+                });
+            }
             return AsyncTest.testcase(test)
         }, AsyncTest.TestGenerator)
         .run()

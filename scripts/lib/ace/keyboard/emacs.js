@@ -64,14 +64,14 @@ exports.handler.attach = function(editor) {
         initialized = true;
         dom.importCssString('\
             .emacs-mode .ace_cursor{\
-                border: 2px rgba(50,250,50,0.8) solid!important;\
+                border: 1px rgba(50,250,50,0.8) solid!important;\
                 -moz-box-sizing: border-box!important;\
                 -webkit-box-sizing: border-box!important;\
                 box-sizing: border-box!important;\
                 background-color: rgba(0,250,0,0.9);\
                 opacity: 0.5;\
             }\
-            .emacs-mode .ace_cursor.ace_hidden{\
+            .emacs-mode .ace_hidden-cursors .ace_cursor{\
                 opacity: 1;\
                 background-color: transparent;\
             }\
@@ -95,14 +95,52 @@ exports.handler.attach = function(editor) {
     $formerLineStart = editor.session.$useEmacsStyleLineStart;
     editor.session.$useEmacsStyleLineStart = true;
 
-    editor.session.$emacsMark = null;
+    editor.session.$emacsMark = null; // the active mark
+    editor.session.$emacsMarkRing = editor.session.$emacsMarkRing || [];
 
-    editor.emacsMarkMode = function() {
+    editor.emacsMark = function() {
         return this.session.$emacsMark;
-    }
+    };
 
-    editor.setEmacsMarkMode = function(p) {
+    editor.setEmacsMark = function(p) {
+        // to deactivate pass in a falsy value
         this.session.$emacsMark = p;
+    };
+
+    editor.pushEmacsMark = function(p, activate) {
+        var prevMark = this.session.$emacsMark;
+        if (prevMark)
+            this.session.$emacsMarkRing.push(prevMark);
+        if (!p || activate) this.setEmacsMark(p);
+        else this.session.$emacsMarkRing.push(p);
+    };
+
+    editor.popEmacsMark = function() {
+        var mark = this.emacsMark();
+        if (mark) { this.setEmacsMark(null); return mark; }
+        return this.session.$emacsMarkRing.pop();
+    };
+
+    editor.getLastEmacsMark = function(p) {
+        return this.session.$emacsMark || this.session.$emacsMarkRing.slice(-1)[0];
+    };
+
+    editor.emacsMarkForSelection = function(replacement) {
+        // find the mark in $emacsMarkRing corresponding to the current
+        // selection
+        var sel = this.selection,
+            multiRangeLength = this.multiSelect ?
+                this.multiSelect.getAllRanges().length : 1,
+            selIndex = sel.index || 0,
+            markRing = this.session.$emacsMarkRing,
+            markIndex = markRing.length - (multiRangeLength - selIndex),
+            lastMark = markRing[markIndex] || sel.anchor;
+        if (replacement) {
+            markRing.splice(markIndex, 1,
+                "row" in replacement && "column" in replacement ?
+                    replacement : undefined);
+        }
+        return lastMark;
     }
 
     editor.on("click", $resetMarkMode);
@@ -112,6 +150,8 @@ exports.handler.attach = function(editor) {
     editor.commands.addCommands(commands);
     exports.handler.platform = editor.commands.platform;
     editor.$emacsModeHandler = this;
+    editor.addEventListener('copy', this.onCopy);
+    editor.addEventListener('paste', this.onPaste);
 };
 
 exports.handler.detach = function(editor) {
@@ -122,6 +162,9 @@ exports.handler.detach = function(editor) {
     editor.removeEventListener("changeSession", $kbSessionChange);
     editor.unsetStyle("emacs-mode");
     editor.commands.removeCommands(commands);
+    editor.removeEventListener('copy', this.onCopy);
+    editor.removeEventListener('paste', this.onPaste);
+    editor.$emacsModeHandler = null;
 };
 
 var $kbSessionChange = function(e) {
@@ -137,15 +180,17 @@ var $kbSessionChange = function(e) {
 
     if (!e.session.hasOwnProperty('$emacsMark'))
         e.session.$emacsMark = null;
-}
+    if (!e.session.hasOwnProperty('$emacsMarkRing'))
+        e.session.$emacsMarkRing = [];
+};
 
 var $resetMarkMode = function(e) {
     e.editor.session.$emacsMark = null;
-}
+};
 
-var keys = require("../lib/keys").KEY_MODS,
-    eMods = {C: "ctrl", S: "shift", M: "alt", CMD: "command"},
-    combinations = ["C-S-M-CMD",
+var keys = require("../lib/keys").KEY_MODS;
+var eMods = {C: "ctrl", S: "shift", M: "alt", CMD: "command"};
+var combinations = ["C-S-M-CMD",
                     "S-M-CMD", "C-M-CMD", "C-S-CMD", "C-S-M",
                     "M-CMD", "S-CMD", "S-M", "C-CMD", "C-M", "C-S",
                     "CMD", "M", "S", "C"];
@@ -157,46 +202,80 @@ combinations.forEach(function(c) {
     eMods[hashId] = c.toLowerCase() + "-";
 });
 
+exports.handler.onCopy = function(e, editor) {
+    if (editor.$handlesEmacsOnCopy) return;
+    editor.$handlesEmacsOnCopy = true;
+    exports.handler.commands.killRingSave.exec(editor);
+    editor.$handlesEmacsOnCopy = false;
+};
+
+exports.handler.onPaste = function(e, editor) {
+    editor.pushEmacsMark(editor.getCursorPosition());
+};
+
 exports.handler.bindKey = function(key, command) {
+    if (typeof key == "object")
+        key = key[this.platform];
     if (!key)
         return;
 
-    var ckb = this.commmandKeyBinding;
+    var ckb = this.commandKeyBinding;
     key.split("|").forEach(function(keyPart) {
         keyPart = keyPart.toLowerCase();
         ckb[keyPart] = command;
-        keyPart = keyPart.split(" ")[0];
-        if (!ckb[keyPart])
-            ckb[keyPart] = "null";
+        // register all partial key combos as null commands
+        // to be able to activate key combos with arbitrary length
+        // Example: if keyPart is "C-c C-l t" then "C-c C-l t" will
+        // get command assigned and "C-c" and "C-c C-l" will get
+        // a null command assigned in this.commandKeyBinding. For
+        // the lookup logic see handleKeyboard()
+        var keyParts = keyPart.split(" ").slice(0,-1);
+        keyParts.reduce(function(keyMapKeys, keyPart, i) {
+            var prefix = keyMapKeys[i-1] ? keyMapKeys[i-1] + ' ' : '';
+            return keyMapKeys.concat([prefix + keyPart]);
+        }, []).forEach(function(keyPart) {
+            if (!ckb[keyPart]) ckb[keyPart] = "null";
+        });
     }, this);
 };
 
+exports.handler.getStatusText = function(editor, data) {
+  var str = "";
+  if (data.count)
+    str += data.count;
+  if (data.keyChain)
+    str += " " + data.keyChain
+  return str;
+};
 
 exports.handler.handleKeyboard = function(data, hashId, key, keyCode) {
+    // if keyCode == -1 a non-printable key was pressed, such as just
+    // control. Handling those is currently not supported in this handler
+    if (keyCode === -1) return undefined;
+
     var editor = data.editor;
+    editor._signal("changeStatus");
     // insertstring data.count times
     if (hashId == -1) {
-        editor.setEmacsMarkMode(null);
+        editor.pushEmacsMark();
         if (data.count) {
-            var str = Array(data.count + 1).join(key);
+            var str = new Array(data.count + 1).join(key);
             data.count = null;
             return {command: "insertstring", args: str};
         }
     }
 
-    if (key == "\x00") return undefined;
-
     var modifier = eMods[hashId];
 
     // CTRL + number / universalArgument for setting data.count
-    if (modifier == "c-" || data.universalArgument) {
+    if (modifier == "c-" || data.count) {
         var count = parseInt(key[key.length - 1]);
-        if (count) {
-            data.count = count;
+        if (typeof count === 'number' && !isNaN(count)) {
+            data.count = Math.max(data.count, 0) || 0;
+            data.count = 10 * data.count + count;
             return {command: "null"};
         }
     }
-    data.universalArgument = false;
 
     // this.commandKeyBinding maps key specs like "c-p" (for CTRL + P) to
     // command objects, for lookup key needs to include the modifier
@@ -206,9 +285,9 @@ exports.handler.handleKeyboard = function(data, hashId, key, keyCode) {
     if (data.keyChain) key = data.keyChain += " " + key;
 
     // Key combo prefixes get stored as "null" (String!) in this
-    // this.commmandKeyBinding. When encountered no command is invoked but we
+    // this.commandKeyBinding. When encountered no command is invoked but we
     // buld up data.keyChain
-    var command = this.commmandKeyBinding[key];
+    var command = this.commandKeyBinding[key];
     data.keyChain = command == "null" ? key : "";
 
     // there really is no command
@@ -218,7 +297,9 @@ exports.handler.handleKeyboard = function(data, hashId, key, keyCode) {
     if (command === "null") return {command: "null"};
 
     if (command === "universalArgument") {
-        data.universalArgument = true;
+        // if no number pressed emacs repeats action 4 times.
+        // minus sign is needed to allow next keypress to replace it
+        data.count = -4;
         return {command: "null"};
     }
 
@@ -230,7 +311,7 @@ exports.handler.handleKeyboard = function(data, hashId, key, keyCode) {
         args = command.args;
         if (command.command) command = command.command;
         if (command === "goorselect") {
-            command = editor.emacsMarkMode() ? args[1] : args[0];
+            command = editor.emacsMark() ? args[1] : args[0];
             args = null;
         }
     }
@@ -239,27 +320,36 @@ exports.handler.handleKeyboard = function(data, hashId, key, keyCode) {
         if (command === "insertstring" ||
             command === "splitline" ||
             command === "togglecomment") {
-            editor.setEmacsMarkMode(null);
+            editor.pushEmacsMark();
         }
         command = this.commands[command] || editor.commands.commands[command];
         if (!command) return undefined;
     }
 
-    if (!command.readonly && !command.isYank)
+    if (!command.readOnly && !command.isYank)
         data.lastCommand = null;
 
+    if (!command.readOnly && editor.emacsMark())
+        editor.setEmacsMark(null)
+        
     if (data.count) {
         var count = data.count;
         data.count = 0;
-        return {
-            args: args,
-            command: {
-                exec: function(editor, args) {
-                    for (var i = 0; i < count; i++)
-                        command.exec(editor, args);
+        if (!command || !command.handlesCount) {
+            return {
+                args: args,
+                command: {
+                    exec: function(editor, args) {
+                        for (var i = 0; i < count; i++)
+                            command.exec(editor, args);
+                    },
+                    multiSelectAction: command.multiSelectAction
                 }
-            }
-        };
+            };
+        } else {
+            if (!args) args = {};
+            if (typeof args === 'object') args.count = count;
+        }
     }
 
     return {command: command, args: args};
@@ -324,7 +414,7 @@ exports.emacsKeys = {
     "M-y": "yankRotate",
     "C-g": "keyboardQuit",
 
-    "C-w": "killRegion",
+    "C-w|C-S-W": "killRegion",
     "M-w": "killRingSave",
     "C-Space": "setMark",
     "C-x C-x": "exchangePointAndMark",
@@ -338,7 +428,7 @@ exports.emacsKeys = {
     "M-;": "togglecomment",
 
     "C-/|C-x u|S-C--|C-z": "undo",
-    "S-C-/|S-C-x u|C--|S-C-z": "redo", //infinite undo?
+    "S-C-/|S-C-x u|C--|S-C-z": "redo", // infinite undo?
     // vertical editing
     "C-x r":  "selectRectangularRegion",
     "M-x": {command: "focusCommandLine", args: "M-x "}
@@ -367,36 +457,74 @@ exports.handler.addCommands({
     selectRectangularRegion:  function(editor) {
         editor.multiSelect.toggleBlockSelection();
     },
-    setMark:  function(editor) {
-        // Emulate emacs highlighting behaviour in transient-mark-mode.
-        // Sets mark-mode and clears current selection.
-        // When mark is set, keyboard cursor movement commands become
-        // selection modification commands. That is,
-        // "goto" commands become "select" commands.
-        // Any insertion or mouse click resets mark-mode.
-        // setMark twice in a row at the same place resets markmode
-        var markMode = editor.emacsMarkMode();
-        if (markMode) {
-            var cp = editor.getCursorPosition();
-            if (editor.selection.isEmpty() &&
-                markMode.row == cp.row && markMode.column == cp.column) {
-                editor.setEmacsMarkMode(null);
-                // console.log("Mark mode off");
+    setMark:  {
+        exec: function(editor, args) {
+            // Sets mark-mode and clears current selection.
+            // When mark is set, keyboard cursor movement commands become
+            // selection modification commands. That is,
+            // "goto" commands become "select" commands.
+            // Any insertion or mouse click resets mark-mode.
+            // setMark twice in a row at the same place resets markmode.
+            // in multi select mode, ea selection is handled individually
+
+            if (args && args.count) {
+                if (editor.inMultiSelectMode) editor.forEachSelection(moveToMark);
+                else moveToMark();
+                moveToMark();
                 return;
             }
-        }
-        // turn on mark mode
-        markMode = editor.getCursorPosition();
-        editor.setEmacsMarkMode(markMode);
-        editor.selection.setSelectionAnchor(markMode.row, markMode.column);
+
+            var mark = editor.emacsMark(),
+                ranges = editor.selection.getAllRanges(),
+                rangePositions = ranges.map(function(r) { return {row: r.start.row, column: r.start.column}; }),
+                transientMarkModeActive = true,
+                hasNoSelection = ranges.every(function(range) { return range.isEmpty(); });
+            // if transientMarkModeActive then mark behavior is a little
+            // different. Deactivate the mark when setMark is run with active
+            // mark
+            if (transientMarkModeActive && (mark || !hasNoSelection)) {
+                if (editor.inMultiSelectMode) editor.forEachSelection({exec: editor.clearSelection.bind(editor)});
+                else editor.clearSelection();
+                if (mark) editor.pushEmacsMark(null);
+                return;
+            }
+
+            if (!mark) {
+                rangePositions.forEach(function(pos) { editor.pushEmacsMark(pos); });
+                editor.setEmacsMark(rangePositions[rangePositions.length-1]);
+                return;
+            }
+
+            // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+            function moveToMark() {
+                var mark = editor.popEmacsMark();
+                mark && editor.moveCursorToPosition(mark);
+            }
+
+        },
+        readOnly: true,
+        handlesCount: true
     },
     exchangePointAndMark: {
-        exec: function(editor) {
-            var range = editor.selection.getRange();
-            editor.selection.setSelectionRange(range, !editor.selection.isBackwards());
+        exec: function exchangePointAndMark$exec(editor, args) {
+            var sel = editor.selection;
+            if (!args.count && !sel.isEmpty()) { // just invert selection
+                sel.setSelectionRange(sel.getRange(), !sel.isBackwards());
+                return;
+            }
+
+            if (args.count) { // replace mark and point
+                var pos = {row: sel.lead.row, column: sel.lead.column};
+                sel.clearSelection();
+                sel.moveCursorToPosition(editor.emacsMarkForSelection(pos));
+            } else { // create selection to last mark
+                sel.selectToPosition(editor.emacsMarkForSelection());
+            }
         },
-        readonly: true,
-        multiselectAction: "forEach"
+        readOnly: true,
+        handlesCount: true,
+        multiSelectAction: "forEach"
     },
     killWord: {
         exec: function(editor, dir) {
@@ -413,13 +541,13 @@ exports.handler.addCommands({
             editor.session.remove(range);
             editor.clearSelection();
         },
-        multiselectAction: "forEach"
+        multiSelectAction: "forEach"
     },
     killLine: function(editor) {
-        editor.setEmacsMarkMode(null);
+        editor.pushEmacsMark(null);
         var pos = editor.getCursorPosition();
-        if (pos.column == 0 &&
-            editor.session.doc.getLine(pos.row).length == 0) {
+        if (pos.column === 0 &&
+            editor.session.doc.getLine(pos.row).length === 0) {
             // If an already empty line is killed, remove
             // the line entirely
             editor.selection.selectLine();
@@ -438,26 +566,54 @@ exports.handler.addCommands({
         editor.clearSelection();
     },
     yank: function(editor) {
-        editor.onPaste(exports.killRing.get());
+        editor.onPaste(exports.killRing.get() || '');
         editor.keyBinding.$data.lastCommand = "yank";
     },
     yankRotate: function(editor) {
         if (editor.keyBinding.$data.lastCommand != "yank")
             return;
         editor.undo();
+        editor.session.$emacsMarkRing.pop(); // also undo recording mark
         editor.onPaste(exports.killRing.rotate());
         editor.keyBinding.$data.lastCommand = "yank";
     },
-    killRegion: function(editor) {
-        exports.killRing.add(editor.getCopyText());
-        editor.commands.byName.cut.exec(editor);
+    killRegion: {
+        exec: function(editor) {
+            exports.killRing.add(editor.getCopyText());
+            editor.commands.byName.cut.exec(editor);
+        },
+        readOnly: true,
+        multiSelectAction: "forEach"
     },
-    killRingSave: function(editor) {
-        exports.killRing.add(editor.getCopyText());
+    killRingSave: {
+        exec: function(editor) {
+            // copy text and deselect. will save marks for starts of the
+            // selection(s)
+
+            editor.$handlesEmacsOnCopy = true;
+            var marks = editor.session.$emacsMarkRing.slice(),
+                deselectedMarks = [];
+            exports.killRing.add(editor.getCopyText());
+
+            setTimeout(function() {
+                function deselect() {
+                    var sel = editor.selection, range = sel.getRange(),
+                        pos = sel.isBackwards() ? range.end : range.start;
+                    deselectedMarks.push({row: pos.row, column: pos.column});
+                    sel.clearSelection();
+                }
+                editor.$handlesEmacsOnCopy = false;
+                if (editor.inMultiSelectMode) editor.forEachSelection({exec: deselect});
+                else deselect();
+                editor.session.$emacsMarkRing = marks.concat(deselectedMarks.reverse());
+            }, 0);
+        },
+        readOnly: true
     },
     keyboardQuit: function(editor) {
         editor.selection.clearSelection();
-        editor.setEmacsMarkMode(null);
+        editor.setEmacsMark(null);
+        editor.keyBinding.$data.count = null;
     },
     focusCommandLine: function(editor, arg) {
         if (editor.showCommandLine)
@@ -478,8 +634,9 @@ exports.killRing = {
         if (this.$data.length > 30)
             this.$data.shift();
     },
-    get: function() {
-        return this.$data[this.$data.length - 1] || "";
+    get: function(n) {
+        n = n || 1;
+        return this.$data.slice(this.$data.length-n, this.$data.length).reverse().join('\n');
     },
     pop: function() {
         if (this.$data.length > 1)

@@ -151,7 +151,7 @@ var EditSession = function(text, mode) {
     this.$foldData = [];
     this.$foldData.toString = function() {
         return this.join("\n");
-    }
+    };
     this.on("changeFold", this.onChangeFold.bind(this));
     this.$onChange = this.onChange.bind(this);
 
@@ -163,7 +163,7 @@ var EditSession = function(text, mode) {
 
     config.resetOptions(this);
     this.setMode(mode);
-    config._emit("session", this);
+    config._signal("session", this);
 };
 
 
@@ -249,13 +249,12 @@ var EditSession = function(text, mode) {
         this.$resetRowCache(fold.start.row);
     };
 
-    this.onChange = function(e) {
-        var delta = e.data;
+    this.onChange = function(delta) {
         this.$modified = true;
 
-        this.$resetRowCache(delta.range.start.row);
+        this.$resetRowCache(delta.start.row);
 
-        var removedFolds = this.$updateInternalDataOnChange(e);
+        var removedFolds = this.$updateInternalDataOnChange(delta);
         if (!this.$fromUndo && this.$undoManager && !delta.ignore) {
             this.$deltasDoc.push(delta);
             if (removedFolds && removedFolds.length != 0) {
@@ -268,26 +267,24 @@ var EditSession = function(text, mode) {
             this.$informUndoManager.schedule();
         }
 
-        this.bgTokenizer.$updateOnChange(delta);
-        this._emit("change", e);
+        this.bgTokenizer && this.bgTokenizer.$updateOnChange(delta);
+        this._signal("change", delta);
     };
 
     /**
     * Sets the session text.
     * @param {String} text The new text to place
     *
-    *
-    *
     **/
     this.setValue = function(text) {
         this.doc.setValue(text);
-        this.selection.moveCursorTo(0, 0);
-        this.selection.clearSelection();
+        this.selection.moveTo(0, 0);
 
         this.$resetRowCache(0);
         this.$deltas = [];
         this.$deltasDoc = [];
         this.$deltasFold = [];
+        this.setUndoManager(this.$undoManager);
         this.getUndoManager().reset();
     };
 
@@ -406,12 +403,13 @@ var EditSession = function(text, mode) {
                 if (self.$deltas.length > 0) {
                     undoManager.execute({
                         action: "aceupdate",
-                        args: [self.$deltas, self]
+                        args: [self.$deltas, self],
+                        merge: self.mergeUndoDeltas
                     });
                 }
-
+                self.mergeUndoDeltas = false;
                 self.$deltas = [];
-            }
+            };
             this.$informUndoManager = lang.delayedCall(this.$syncInformUndoManager);
         }
     };
@@ -461,14 +459,15 @@ var EditSession = function(text, mode) {
     * @returns {Boolean}
     **/
     this.getUseSoftTabs = function() {
-         return this.$useSoftTabs;
+        // todo might need more general way for changing settings from mode, but this is ok for now
+        return this.$useSoftTabs && !this.$mode.$indentWithTabs;
     };
     /**
     * Set the number of spaces that define a soft tab; for example, passing in `4` transforms the soft tabs to be equivalent to four spaces. This function also emits the `changeTabSize` event.
     * @param {Number} tabSize The new tab size
     **/
     this.setTabSize = function(tabSize) {
-        this.setOption("tabSize", tabSize)
+        this.setOption("tabSize", tabSize);
     };
     /**
     * Returns the current tab size.
@@ -484,7 +483,7 @@ var EditSession = function(text, mode) {
     *
     **/
     this.isTabStop = function(position) {
-        return this.$useSoftTabs && (position.column % this.$tabSize == 0);
+        return this.$useSoftTabs && (position.column % this.$tabSize === 0);
     };
 
     this.$overwrite = false;
@@ -498,7 +497,7 @@ var EditSession = function(text, mode) {
     *
     **/
     this.setOverwrite = function(overwrite) {
-        this.setOption("overwrite", overwrite)
+        this.setOption("overwrite", overwrite);
     };
 
     /**
@@ -526,7 +525,7 @@ var EditSession = function(text, mode) {
         if (!this.$decorations[row])
             this.$decorations[row] = "";
         this.$decorations[row] += " " + className;
-        this._emit("changeBreakpoint", {});
+        this._signal("changeBreakpoint", {});
     };
 
     /**
@@ -538,7 +537,7 @@ var EditSession = function(text, mode) {
     **/
     this.removeGutterDecoration = function(row, className) {
         this.$decorations[row] = (this.$decorations[row] || "").replace(" " + className, "");
-        this._emit("changeBreakpoint", {});
+        this._signal("changeBreakpoint", {});
     };
 
     /**
@@ -561,7 +560,7 @@ var EditSession = function(text, mode) {
         for (var i=0; i<rows.length; i++) {
             this.$breakpoints[rows[i]] = "ace_breakpoint";
         }
-        this._emit("changeBreakpoint", {});
+        this._signal("changeBreakpoint", {});
     };
 
     /**
@@ -569,7 +568,7 @@ var EditSession = function(text, mode) {
     **/
     this.clearBreakpoints = function() {
         this.$breakpoints = [];
-        this._emit("changeBreakpoint", {});
+        this._signal("changeBreakpoint", {});
     };
 
     /**
@@ -586,7 +585,7 @@ var EditSession = function(text, mode) {
             this.$breakpoints[row] = className;
         else
             delete this.$breakpoints[row];
-        this._emit("changeBreakpoint", {});
+        this._signal("changeBreakpoint", {});
     };
 
     /**
@@ -597,7 +596,7 @@ var EditSession = function(text, mode) {
     **/
     this.clearBreakpoint = function(row) {
         delete this.$breakpoints[row];
-        this._emit("changeBreakpoint", {});
+        this._signal("changeBreakpoint", {});
     };
 
     /**
@@ -620,14 +619,14 @@ var EditSession = function(text, mode) {
             clazz : clazz,
             inFront: !!inFront,
             id: id
-        }
+        };
 
         if (inFront) {
             this.$frontMarkers[id] = marker;
-            this._emit("changeFrontMarker")
+            this._signal("changeFrontMarker");
         } else {
             this.$backMarkers[id] = marker;
-            this._emit("changeBackMarker")
+            this._signal("changeBackMarker");
         }
 
         return id;
@@ -650,10 +649,10 @@ var EditSession = function(text, mode) {
 
         if (inFront) {
             this.$frontMarkers[id] = marker;
-            this._emit("changeFrontMarker")
+            this._signal("changeFrontMarker");
         } else {
             this.$backMarkers[id] = marker;
-            this._emit("changeBackMarker")
+            this._signal("changeBackMarker");
         }
 
         return marker;
@@ -674,15 +673,15 @@ var EditSession = function(text, mode) {
         var markers = marker.inFront ? this.$frontMarkers : this.$backMarkers;
         if (marker) {
             delete (markers[markerId]);
-            this._emit(marker.inFront ? "changeFrontMarker" : "changeBackMarker");
+            this._signal(marker.inFront ? "changeFrontMarker" : "changeBackMarker");
         }
     };
 
     /**
-    * Returns an array containing the IDs of all the markers, either front or back.
+    * Returns an object containing all of the markers, either front or back.
     * @param {Boolean} inFront If `true`, indicates you only want front markers; `false` indicates only back markers
     *
-    * @returns {Array}
+    * @returns {Object}
     **/
     this.getMarkers = function(inFront) {
         return inFront ? this.$frontMarkers : this.$backMarkers;
@@ -694,7 +693,7 @@ var EditSession = function(text, mode) {
             this.$searchHighlight = this.addDynamicMarker(highlight);
         }
         this.$searchHighlight.setRegexp(re);
-    }
+    };
 
     // experimental
     this.highlightLines = function(startRow, endRow, clazz, inFront) {
@@ -726,7 +725,7 @@ var EditSession = function(text, mode) {
     **/
     this.setAnnotations = function(annotations) {
         this.$annotations = annotations;
-        this._emit("changeAnnotation", {});
+        this._signal("changeAnnotation", {});
     };
 
     /**
@@ -856,7 +855,7 @@ var EditSession = function(text, mode) {
     this.onReloadTokenizer = function(e) {
         var rows = e.data;
         this.bgTokenizer.start(rows.first);
-        this._emit("tokenizerUpdate", e);
+        this._signal("tokenizerUpdate", e);
     };
 
     this.$modes = {};
@@ -864,11 +863,12 @@ var EditSession = function(text, mode) {
     /**
     * Sets a new text mode for the `EditSession`. This method also emits the `'changeMode'` event. If a [[BackgroundTokenizer `BackgroundTokenizer`]] is set, the `'tokenizerUpdate'` event is also emitted.
     * @param {TextMode} mode Set a new text mode
+    * @param {cb} optional callback
     *
     **/
     this.$mode = null;
     this.$modeId = null;
-    this.setMode = function(mode) {
+    this.setMode = function(mode, cb) {
         if (mode && typeof mode === "object") {
             if (mode.getTokenizer)
                 return this.$onChangeMode(mode);
@@ -882,24 +882,27 @@ var EditSession = function(text, mode) {
         if (!this.$modes["ace/mode/text"])
             this.$modes["ace/mode/text"] = new TextMode();
 
-        if (this.$modes[path] && !options)
-            return this.$onChangeMode(this.$modes[path]);
-
+        if (this.$modes[path] && !options) {
+            this.$onChangeMode(this.$modes[path]);
+            cb && cb();
+            return;
+        }
         // load on demand
         this.$modeId = path;
         config.loadModule(["mode", path], function(m) {
             if (this.$modeId !== path)
-                return;
-            if (this.$modes[path] && !options)
-                return this.$onChangeMode(this.$modes[path]);
-            if (m && m.Mode) {
+                return cb && cb();
+            if (this.$modes[path] && !options) {
+                this.$onChangeMode(this.$modes[path]);
+            } else if (m && m.Mode) {
                 m = new m.Mode(options);
                 if (!options) {
                     this.$modes[path] = m;
                     m.$id = path;
                 }
-                this.$onChangeMode(m)
+                this.$onChangeMode(m);
             }
+            cb && cb();
         }.bind(this));
 
         // set mode to text until loading is finished
@@ -908,7 +911,11 @@ var EditSession = function(text, mode) {
     };
 
     this.$onChangeMode = function(mode, $isPlaceholder) {
-        if (this.$mode === mode) return;
+        if (!$isPlaceholder)
+            this.$modeId = mode.$id;
+        if (this.$mode === mode) 
+            return;
+
         this.$mode = mode;
 
         this.$stopWorker();
@@ -927,7 +934,7 @@ var EditSession = function(text, mode) {
             this.bgTokenizer = new BackgroundTokenizer(tokenizer);
             var _self = this;
             this.bgTokenizer.addEventListener("update", function(e) {
-                _self._emit("tokenizerUpdate", e);
+                _self._signal("tokenizerUpdate", e);
             });
         } else {
             this.bgTokenizer.setTokenizer(tokenizer);
@@ -938,35 +945,32 @@ var EditSession = function(text, mode) {
         this.tokenRe = mode.tokenRe;
         this.nonTokenRe = mode.nonTokenRe;
 
-
+        
         if (!$isPlaceholder) {
-            this.$modeId = mode.$id;
+            // experimental method, used by c9 findiniles
+            if (mode.attachToSession)
+                mode.attachToSession(this);
+            this.$options.wrapMethod.set.call(this, this.$wrapMethod);
             this.$setFolding(mode.foldingRules);
-            this._emit("changeMode");
             this.bgTokenizer.start(0);
+            this._emit("changeMode");
         }
     };
 
-
     this.$stopWorker = function() {
-        if (this.$worker)
+        if (this.$worker) {
             this.$worker.terminate();
-
-        this.$worker = null;
+            this.$worker = null;
+        }
     };
 
     this.$startWorker = function() {
-        if (typeof Worker !== "undefined" && !require.noWorker) {
-            try {
-                this.$worker = this.$mode.createWorker(this);
-            } catch (e) {
-                console.log("Could not load worker");
-                console.log(e);
-                this.$worker = null;
-            }
-        }
-        else
+        try {
+            this.$worker = this.$mode.createWorker(this);
+        } catch (e) {
+            config.warn("Could not load worker", e);
             this.$worker = null;
+        }
     };
 
     /**
@@ -984,7 +988,7 @@ var EditSession = function(text, mode) {
     *
     **/
     this.setScrollTop = function(scrollTop) {
-        scrollTop = Math.round(Math.max(0, scrollTop));
+        // TODO: should we force integer lineheight instead? scrollTop = Math.round(scrollTop); 
         if (this.$scrollTop === scrollTop || isNaN(scrollTop))
             return;
 
@@ -1005,7 +1009,7 @@ var EditSession = function(text, mode) {
     * [Sets the value of the distance between the left of the editor and the leftmost part of the visible content.]{: #EditSession.setScrollLeft}
     **/
     this.setScrollLeft = function(scrollLeft) {
-        scrollLeft = Math.round(Math.max(0, scrollLeft));
+        // scrollLeft = Math.round(scrollLeft);
         if (this.$scrollLeft === scrollLeft || isNaN(scrollLeft))
             return;
 
@@ -1027,7 +1031,19 @@ var EditSession = function(text, mode) {
     **/
     this.getScreenWidth = function() {
         this.$computeWidth();
+        if (this.lineWidgets) 
+            return Math.max(this.getLineWidgetMaxWidth(), this.screenWidth);
         return this.screenWidth;
+    };
+    
+    this.getLineWidgetMaxWidth = function() {
+        if (this.lineWidgetsWidth != null) return this.lineWidgetsWidth;
+        var width = 0;
+        this.lineWidgets.forEach(function(w) {
+            if (w && w.screenWidth > width)
+                width = w.screenWidth;
+        });
+        return this.lineWidgetWidth = width;
     };
 
     this.$computeWidth = function(force) {
@@ -1129,6 +1145,19 @@ var EditSession = function(text, mode) {
     this.remove = function(range) {
         return this.doc.remove(range);
     };
+    
+    /**
+    * Removes a range of full lines. This method also triggers the `'change'` event.
+    * @param {Number} firstRow The first row to be removed
+    * @param {Number} lastRow The last row to be removed
+    * @returns {[String]} Returns all the removed lines.
+    *
+    * @related Document.removeFullLines
+    *
+    **/
+    this.removeFullLines = function(firstRow, lastRow){
+        return this.doc.removeFullLines(firstRow, lastRow);
+    };
 
     /**
      * Reverts previous changes to your document.
@@ -1205,39 +1234,36 @@ var EditSession = function(text, mode) {
 
     this.$getUndoSelection = function(deltas, isUndo, lastUndoRange) {
         function isInsert(delta) {
-            var insert =
-                delta.action === "insertText" || delta.action === "insertLines";
-            return isUndo ? !insert : insert;
+            return isUndo ? delta.action !== "insert" : delta.action === "insert";
         }
 
         var delta = deltas[0];
         var range, point;
         var lastDeltaIsInsert = false;
         if (isInsert(delta)) {
-            range = delta.range.clone();
+            range = Range.fromPoints(delta.start, delta.end);
             lastDeltaIsInsert = true;
         } else {
-            range = Range.fromPoints(delta.range.start, delta.range.start);
+            range = Range.fromPoints(delta.start, delta.start);
             lastDeltaIsInsert = false;
         }
 
         for (var i = 1; i < deltas.length; i++) {
             delta = deltas[i];
             if (isInsert(delta)) {
-                point = delta.range.start;
+                point = delta.start;
                 if (range.compare(point.row, point.column) == -1) {
-                    range.setStart(delta.range.start);
+                    range.setStart(point);
                 }
-                point = delta.range.end;
+                point = delta.end;
                 if (range.compare(point.row, point.column) == 1) {
-                    range.setEnd(delta.range.end);
+                    range.setEnd(point);
                 }
                 lastDeltaIsInsert = true;
             } else {
-                point = delta.range.start;
+                point = delta.start;
                 if (range.compare(point.row, point.column) == -1) {
-                    range =
-                        Range.fromPoints(delta.range.start, delta.range.start);
+                    range = Range.fromPoints(delta.start, delta.start);
                 }
                 lastDeltaIsInsert = false;
             }
@@ -1246,6 +1272,11 @@ var EditSession = function(text, mode) {
         // Check if this range and the last undo range has something in common.
         // If true, merge the ranges.
         if (lastUndoRange != null) {
+            if (Range.comparePoints(lastUndoRange.start, range.start) === 0) {
+                lastUndoRange.start.column += range.end.column - range.start.column;
+                lastUndoRange.end.column += range.end.column - range.start.column;
+            }
+
             var cmp = lastUndoRange.compareRange(range);
             if (cmp == 1) {
                 range.setStart(lastUndoRange.start);
@@ -1312,7 +1343,7 @@ var EditSession = function(text, mode) {
             }
         }
 
-        this.insert(toRange.start, text);
+        toRange.end = this.insert(toRange.start, text);
         if (folds.length) {
             var oldStart = fromRange.start;
             var newStart = toRange.start;
@@ -1346,7 +1377,7 @@ var EditSession = function(text, mode) {
     this.indentRows = function(startRow, endRow, indentString) {
         indentString = indentString.replace(/\t/g, this.getTabString());
         for (var row=startRow; row<=endRow; row++)
-            this.insert({row: row, column:0}, indentString);
+            this.doc.insertInLine({row: row, column: 0}, indentString);
     };
 
     /**
@@ -1403,11 +1434,11 @@ var EditSession = function(text, mode) {
             x.end.row += diff;
             return x;
         });
-
+        
         var lines = dir == 0
             ? this.doc.getLines(firstRow, lastRow)
-            : this.doc.removeLines(firstRow, lastRow);
-        this.doc.insertLines(firstRow+diff, lines);
+            : this.doc.removeFullLines(firstRow, lastRow);
+        this.doc.insertFullLines(firstRow+diff, lines);
         folds.length && this.addFolds(folds);
         return diff;
     };
@@ -1416,8 +1447,6 @@ var EditSession = function(text, mode) {
     * @param {Number} firstRow The starting row to move up
     * @param {Number} lastRow The final row to move up
     * @returns {Number} If `firstRow` is less-than or equal to 0, this function returns 0. Otherwise, on success, it returns -1.
-    *
-    * @related Document.insertLines
     *
     **/
     this.moveLinesUp = function(firstRow, lastRow) {
@@ -1429,8 +1458,6 @@ var EditSession = function(text, mode) {
     * @param {Number} firstRow The starting row to move down
     * @param {Number} lastRow The final row to move down
     * @returns {Number} If `firstRow` is less-than or equal to 0, this function returns 0. Otherwise, on success, it returns -1.
-    *
-    * @related Document.insertLines
     **/
     this.moveLinesDown = function(firstRow, lastRow) {
         return this.$moveLines(firstRow, lastRow, 1);
@@ -1529,14 +1556,11 @@ var EditSession = function(text, mode) {
             // If wrapMode is activaed, the wrapData array has to be initialized.
             if (useWrapMode) {
                 var len = this.getLength();
-                this.$wrapData = [];
-                for (var i = 0; i < len; i++) {
-                    this.$wrapData.push([]);
-                }
+                this.$wrapData = Array(len);
                 this.$updateWrapData(0, len - 1);
             }
 
-            this._emit("changeWrapMode");
+            this._signal("changeWrapMode");
         }
     };
 
@@ -1561,11 +1585,11 @@ var EditSession = function(text, mode) {
     **/
     this.setWrapLimitRange = function(min, max) {
         if (this.$wrapLimitRange.min !== min || this.$wrapLimitRange.max !== max) {
-            this.$wrapLimitRange.min = min;
-            this.$wrapLimitRange.max = max;
+            this.$wrapLimitRange = { min: min, max: max };
             this.$modified = true;
             // This will force a recalculation of the wrap limit
-            this._emit("changeWrapMode");
+            if (this.$useWrapMode)
+                this._signal("changeWrapMode");
         }
     };
 
@@ -1577,7 +1601,7 @@ var EditSession = function(text, mode) {
     * @private
     **/
     this.adjustWrapLimit = function(desiredLimit, $printMargin) {
-        var limits = this.$wrapLimitRange
+        var limits = this.$wrapLimitRange;
         if (limits.max < 0)
             limits = {min: $printMargin, max: $printMargin};
         var wrapLimit = this.$constrainWrapLimit(desiredLimit, limits.min, limits.max);
@@ -1587,7 +1611,7 @@ var EditSession = function(text, mode) {
             if (this.$useWrapMode) {
                 this.$updateWrapData(0, this.getLength() - 1);
                 this.$resetRowCache(0);
-                this._emit("changeWrapLimit");
+                this._signal("changeWrapLimit");
             }
             return true;
         }
@@ -1637,34 +1661,23 @@ var EditSession = function(text, mode) {
         };
     };
 
-    this.$updateInternalDataOnChange = function(e) {
+    this.$updateInternalDataOnChange = function(delta) {
         var useWrapMode = this.$useWrapMode;
-        var len;
-        var action = e.data.action;
-        var firstRow = e.data.range.start.row;
-        var lastRow = e.data.range.end.row;
-        var start = e.data.range.start;
-        var end = e.data.range.end;
+        var action = delta.action;
+        var start = delta.start;
+        var end = delta.end;
+        var firstRow = start.row;
+        var lastRow = end.row;
+        var len = lastRow - firstRow;
         var removedFolds = null;
-
-        if (action.indexOf("Lines") != -1) {
-            if (action == "insertLines") {
-                lastRow = firstRow + (e.data.lines.length);
-            } else {
-                lastRow = firstRow;
-            }
-            len = e.data.lines ? e.data.lines.length : lastRow - firstRow;
-        } else {
-            len = lastRow - firstRow;
-        }
-
+        
         this.$updating = true;
         if (len != 0) {
-            if (action.indexOf("remove") != -1) {
+            if (action === "remove") {
                 this[useWrapMode ? "$wrapData" : "$rowLengthCache"].splice(firstRow, len);
 
                 var foldLines = this.$foldData;
-                removedFolds = this.getFoldsInRange(e.data.range);
+                removedFolds = this.getFoldsInRange(delta);
                 this.removeFolds(removedFolds);
 
                 var foldLine = this.getFoldLine(end.row);
@@ -1690,16 +1703,10 @@ var EditSession = function(text, mode) {
 
                 lastRow = firstRow;
             } else {
-                var args;
-                if (useWrapMode) {
-                    args = [firstRow, 0];
-                    for (var i = 0; i < len; i++) args.push([]);
-                    this.$wrapData.splice.apply(this.$wrapData, args);
-                } else {
-                    args = Array(len);
-                    args.unshift(firstRow, 0);
-                    this.$rowLengthCache.splice.apply(this.$rowLengthCache, args);
-                }
+                var args = Array(len);
+                args.unshift(firstRow, 0);
+                var arr = useWrapMode ? this.$wrapData : this.$rowLengthCache
+                arr.splice.apply(arr, args);
 
                 // If some new line is added inside of a foldLine, then split
                 // the fold line up.
@@ -1707,13 +1714,14 @@ var EditSession = function(text, mode) {
                 var foldLine = this.getFoldLine(firstRow);
                 var idx = 0;
                 if (foldLine) {
-                    var cmp = foldLine.range.compareInside(start.row, start.column)
+                    var cmp = foldLine.range.compareInside(start.row, start.column);
                     // Inside of the foldLine range. Need to split stuff up.
                     if (cmp == 0) {
                         foldLine = foldLine.split(start.row, start.column);
-                        foldLine.shiftRow(len);
-                        foldLine.addRemoveChars(
-                            lastRow, 0, end.column - start.column);
+                        if (foldLine) {
+                            foldLine.shiftRow(len);
+                            foldLine.addRemoveChars(lastRow, 0, end.column - start.column);
+                        }
                     } else
                     // Infront of the foldLine but same row. Need to shift column.
                     if (cmp == -1) {
@@ -1734,10 +1742,10 @@ var EditSession = function(text, mode) {
         } else {
             // Realign folds. E.g. if you add some new chars before a fold, the
             // fold should "move" to the right.
-            len = Math.abs(e.data.range.start.column - e.data.range.end.column);
-            if (action.indexOf("remove") != -1) {
+            len = Math.abs(delta.start.column - delta.end.column);
+            if (action === "remove") {
                 // Get all the folds in the change range and remove them.
-                removedFolds = this.getFoldsInRange(e.data.range);
+                removedFolds = this.getFoldsInRange(delta);
                 this.removeFolds(removedFolds);
 
                 len = -len;
@@ -1779,7 +1787,7 @@ var EditSession = function(text, mode) {
         while (row <= lastRow) {
             foldLine = this.getFoldLine(row, foldLine);
             if (!foldLine) {
-                tokens = this.$getDisplayTokens(lang.stringTrimRight(lines[row]));
+                tokens = this.$getDisplayTokens(lines[row]);
                 wrapData[row] = this.$computeWrapSplits(tokens, wrapLimit, tabSize);
                 row ++;
             } else {
@@ -1803,12 +1811,8 @@ var EditSession = function(text, mode) {
                     foldLine.end.row,
                     lines[foldLine.end.row].length + 1
                 );
-                // Remove spaces/tabs from the back of the token array.
-                while (tokens.length != 0 && tokens[tokens.length - 1] >= SPACE)
-                    tokens.pop();
 
-                wrapData[foldLine.start.row]
-                    = this.$computeWrapSplits(tokens, wrapLimit, tabSize);
+                wrapData[foldLine.start.row] = this.$computeWrapSplits(tokens, wrapLimit, tabSize);
                 row = foldLine.end.row + 1;
             }
         }
@@ -1825,7 +1829,7 @@ var EditSession = function(text, mode) {
         TAB_SPACE = 12;
 
 
-    this.$computeWrapSplits = function(tokens, wrapLimit) {
+    this.$computeWrapSplits = function(tokens, wrapLimit, tabSize) {
         if (tokens.length == 0) {
             return [];
         }
@@ -1834,6 +1838,33 @@ var EditSession = function(text, mode) {
         var displayLength = tokens.length;
         var lastSplit = 0, lastDocSplit = 0;
 
+        var isCode = this.$wrapAsCode;
+
+        var indentedSoftWrap = this.$indentedSoftWrap;
+        var maxIndent = wrapLimit <= Math.max(2 * tabSize, 8)
+            || indentedSoftWrap === false ? 0 : Math.floor(wrapLimit / 2);
+
+        function getWrapIndent() {
+            var indentation = 0;
+            if (maxIndent === 0)
+                return indentation;
+            if (indentedSoftWrap) {
+                for (var i = 0; i < tokens.length; i++) {
+                    var token = tokens[i];
+                    if (token == SPACE)
+                        indentation += 1;
+                    else if (token == TAB)
+                        indentation += tabSize;
+                    else if (token == TAB_SPACE)
+                        continue;
+                    else
+                        break;
+                }
+            }
+            if (isCode && indentedSoftWrap !== false)
+                indentation += tabSize;
+            return Math.min(indentation, maxIndent);
+        }
         function addSplit(screenPos) {
             var displayed = tokens.slice(lastSplit, screenPos);
 
@@ -1850,22 +1881,27 @@ var EditSession = function(text, mode) {
                     len -= 1;
                 });
 
+            if (!splits.length) {
+                indent = getWrapIndent();
+                splits.indent = indent;
+            }
             lastDocSplit += len;
             splits.push(lastDocSplit);
             lastSplit = screenPos;
         }
-
-        while (displayLength - lastSplit > wrapLimit) {
+        var indent = 0;
+        while (displayLength - lastSplit > wrapLimit - indent) {
             // This is, where the split should be.
-            var split = lastSplit + wrapLimit;
+            var split = lastSplit + wrapLimit - indent;
 
             // If there is a space or tab at this split position, then making
             // a split is simple.
-            if (tokens[split] >= SPACE) {
+            if (tokens[split - 1] >= SPACE && tokens[split] >= SPACE) {
+                /* disabled see https://github.com/ajaxorg/ace/issues/1186
                 // Include all following spaces + tabs in this split as well.
                 while (tokens[split] >= SPACE) {
                     split ++;
-                }
+                } */
                 addSplit(split);
                 continue;
             }
@@ -1874,9 +1910,7 @@ var EditSession = function(text, mode) {
             // Check if split is inside of a placeholder. Placeholder are
             // not splitable. Therefore, seek the beginning of the placeholder
             // and try to place the split beofre the placeholder's start.
-            if (tokens[split] == PLACEHOLDER_START
-                || tokens[split] == PLACEHOLDER_BODY)
-            {
+            if (tokens[split] == PLACEHOLDER_START || tokens[split] == PLACEHOLDER_BODY) {
                 // Seek the start of the placeholder and do the split
                 // before the placeholder. By definition there always
                 // a PLACEHOLDER_START between split and lastSplit.
@@ -1900,8 +1934,7 @@ var EditSession = function(text, mode) {
                 // placeholder. So, let's seek for the end of the placeholder.
                 split = lastSplit + wrapLimit;
                 for (split; split < tokens.length; split++) {
-                    if (tokens[split] != PLACEHOLDER_BODY)
-                    {
+                    if (tokens[split] != PLACEHOLDER_BODY) {
                         break;
                     }
                 }
@@ -1919,12 +1952,21 @@ var EditSession = function(text, mode) {
 
             // === ELSE ===
             // Search for the first non space/tab/placeholder/punctuation token backwards.
-            var minSplit = Math.max(split - 10, lastSplit - 1);
+            var minSplit = Math.max(split - (wrapLimit -(wrapLimit>>2)), lastSplit - 1);
             while (split > minSplit && tokens[split] < PLACEHOLDER_START) {
                 split --;
             }
-            while (split > minSplit && tokens[split] == PUNCTUATION) {
-                split --;
+            if (isCode) {
+                while (split > minSplit && tokens[split] < PLACEHOLDER_START) {
+                    split --;
+                }
+                while (split > minSplit && tokens[split] == PUNCTUATION) {
+                    split --;
+                }
+            } else {
+                while (split > minSplit && tokens[split] < SPACE) {
+                    split --;
+                }
             }
             // If we found one, then add the split.
             if (split > minSplit) {
@@ -1936,7 +1978,9 @@ var EditSession = function(text, mode) {
             split = lastSplit + wrapLimit;
             // The split is inside of a CHAR or CHAR_EXT token and no space
             // around -> force a split.
-            addSplit(split);
+            if (tokens[split] == CHAR_EXT)
+                split--;
+            addSplit(split - indent);
         }
         return splits;
     };
@@ -1988,9 +2032,6 @@ var EditSession = function(text, mode) {
     * The first position indicates the number of columns for `str` on screen.<br/>
     * The second value contains the position of the document column that this function read until.
     *
-    *
-    *
-    *
     **/
     this.$getStringScreenWidth = function(str, maxScreenColumn, screenColumn) {
         if (maxScreenColumn == 0)
@@ -2020,6 +2061,7 @@ var EditSession = function(text, mode) {
         return [screenColumn, column];
     };
 
+    this.lineWidgets = null;
     /**
     * Returns number of screenrows in a wrapped line.
     * @param {Number} row The row number to check
@@ -2027,12 +2069,33 @@ var EditSession = function(text, mode) {
     * @returns {Number}
     **/
     this.getRowLength = function(row) {
+        if (this.lineWidgets)
+            var h = this.lineWidgets[row] && this.lineWidgets[row].rowCount || 0;
+        else 
+            h = 0
+        if (!this.$useWrapMode || !this.$wrapData[row]) {
+            return 1 + h;
+        } else {
+            return this.$wrapData[row].length + 1 + h;
+        }
+    };
+    this.getRowLineCount = function(row) {
         if (!this.$useWrapMode || !this.$wrapData[row]) {
             return 1;
         } else {
             return this.$wrapData[row].length + 1;
         }
     };
+
+    this.getRowWrapIndent = function(screenRow) {
+        if (this.$useWrapMode) {
+            var pos = this.screenToDocumentPosition(screenRow, Number.MAX_VALUE);
+            var splits = this.$wrapData[pos.row];
+            return splits.length && splits[0] < pos.column ? splits.indent : 0;
+        } else {
+            return 0;
+        }
+    }
 
     /**
      * Returns the position (on screen) for the last character in the provided screen row.
@@ -2140,7 +2203,7 @@ var EditSession = function(text, mode) {
 
         while (row <= screenRow) {
             rowLength = this.getRowLength(docRow);
-            if (row + rowLength - 1 >= screenRow || docRow >= maxRow) {
+            if (row + rowLength > screenRow || docRow >= maxRow) {
                 break;
             } else {
                 row += rowLength;
@@ -2166,24 +2229,26 @@ var EditSession = function(text, mode) {
             return {
                 row: maxRow,
                 column: this.getLine(maxRow).length
-            }
+            };
         } else {
             line = this.getLine(docRow);
             foldLine = null;
         }
-
+        var wrapIndent = 0;
         if (this.$useWrapMode) {
             var splits = this.$wrapData[docRow];
             if (splits) {
-                column = splits[screenRow - row];
-                if(screenRow > row && splits.length) {
-                    docColumn = splits[screenRow - row - 1] || splits[splits.length - 1];
+                var splitIndex = Math.floor(screenRow - row);
+                column = splits[splitIndex];
+                if(splitIndex > 0 && splits.length) {
+                    wrapIndent = splits.indent;
+                    docColumn = splits[splitIndex - 1] || splits[splits.length - 1];
                     line = line.substring(docColumn);
                 }
             }
         }
 
-        docColumn += this.$getStringScreenWidth(line, screenColumn)[1];
+        docColumn += this.$getStringScreenWidth(line, screenColumn - wrapIndent)[1];
 
         // We remove one character at the end so that the docColumn
         // position returned is not associated to the next row on the screen.
@@ -2275,22 +2340,26 @@ var EditSession = function(text, mode) {
             textLine = this.getLine(docRow).substring(0, docColumn);
             foldStartRow = docRow;
         }
+        var wrapIndent = 0;
         // Clamp textLine if in wrapMode.
         if (this.$useWrapMode) {
             var wrapRow = this.$wrapData[foldStartRow];
-            var screenRowOffset = 0;
-            while (textLine.length >= wrapRow[screenRowOffset]) {
-                screenRow ++;
-                screenRowOffset++;
+            if (wrapRow) {
+                var screenRowOffset = 0;
+                while (textLine.length >= wrapRow[screenRowOffset]) {
+                    screenRow ++;
+                    screenRowOffset++;
+                }
+                textLine = textLine.substring(
+                    wrapRow[screenRowOffset - 1] || 0, textLine.length
+                );
+                wrapIndent = screenRowOffset > 0 ? wrapRow.indent : 0;
             }
-            textLine = textLine.substring(
-                wrapRow[screenRowOffset - 1] || 0, textLine.length
-            );
         }
 
         return {
             row: screenRow,
-            column: this.$getStringScreenWidth(textLine)[0]
+            column: wrapIndent + this.$getStringScreenWidth(textLine)[0]
         };
     };
 
@@ -2339,7 +2408,8 @@ var EditSession = function(text, mode) {
             var foldStart = fold ? fold.start.row :Infinity;
 
             while (row < lastRow) {
-                screenRows += this.$wrapData[row].length + 1;
+                var splits = this.$wrapData[row];
+                screenRows += splits ? splits.length + 1 : 1;
                 row ++;
                 if (row > foldStart) {
                     row = fold.end.row+1;
@@ -2349,16 +2419,31 @@ var EditSession = function(text, mode) {
             }
         }
 
+        // todo
+        if (this.lineWidgets)
+            screenRows += this.$getWidgetScreenLength();
+
         return screenRows;
     };
-
-    // For every keystroke this gets called once per char in the whole doc!!
-    // Wouldn't hurt to make it a bit faster for c >= 0x1100
-
+    
     /**
      * @private
      *
      */
+    this.$setFontMetrics = function(fm) {
+        // todo
+    };
+    
+    this.destroy = function() {
+        if (this.bgTokenizer) {
+            this.bgTokenizer.setDocument(null);
+            this.bgTokenizer = null;
+        }
+        this.$stopWorker();
+    };
+
+    // For every keystroke this gets called once per char in the whole doc!!
+    // Wouldn't hurt to make it a bit faster for c >= 0x1100
     function isFullWidth(c) {
         if (c < 0x1100)
             return false;
@@ -2416,6 +2501,7 @@ config.defineOptions(EditSession.prototype, "session", {
 
             if (this.$wrap == value)
                 return;
+            this.$wrap = value;
             if (!value) {
                 this.setUseWrapMode(false);
             } else {
@@ -2423,15 +2509,39 @@ config.defineOptions(EditSession.prototype, "session", {
                 this.setWrapLimitRange(col, col);
                 this.setUseWrapMode(true);
             }
-            this.$wrap = value;
         },
         get: function() {
-            return this.getUseWrapMode() ? this.getWrapLimitRange().min || "free" : "off";
+            if (this.getUseWrapMode()) {
+                if (this.$wrap == -1)
+                    return "printMargin";
+                if (!this.getWrapLimitRange().min)
+                    return "free";
+                return this.$wrap;
+            }
+            return "off";
         },
         handlesSet: true
+    },    
+    wrapMethod: {
+        // code|text|auto
+        set: function(val) {
+            val = val == "auto"
+                ? this.$mode.type != "text"
+                : val != "text";
+            if (val != this.$wrapAsCode) {
+                this.$wrapAsCode = val;
+                if (this.$useWrapMode) {
+                    this.$modified = true;
+                    this.$resetRowCache(0);
+                    this.$updateWrapData(0, this.getLength() - 1);
+                }
+            }
+        },
+        initialValue: "auto"
     },
+    indentedSoftWrap: { initialValue: true },
     firstLineNumber: {
-        set: function() {this._emit("changeBreakpoint");},
+        set: function() {this._signal("changeBreakpoint");},
         initialValue: 1
     },
     useWorker: {
@@ -2452,19 +2562,23 @@ config.defineOptions(EditSession.prototype, "session", {
             this.$modified = true;
             this.$rowLengthCache = [];
             this.$tabSize = tabSize;
-            this._emit("changeTabSize");
+            this._signal("changeTabSize");
         },
         initialValue: 4,
         handlesSet: true
     },
     overwrite: {
-        set: function(val) {this._emit("changeOverwrite");},
+        set: function(val) {this._signal("changeOverwrite");},
         initialValue: false
     },
     newLineMode: {
         set: function(val) {this.doc.setNewLineMode(val)},
         get: function() {return this.doc.getNewLineMode()},
         handlesSet: true
+    },
+    mode: {
+        set: function(val) { this.setMode(val) },
+        get: function() { return this.$modeId }
     }
 });
 

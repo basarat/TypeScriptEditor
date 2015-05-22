@@ -27,10 +27,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  *
- * Contributor(s):
- *
- *
- *
  * ***** END LICENSE BLOCK ***** */
 
 /*
@@ -41,21 +37,21 @@ define(function(require, exports, module) {
 "use strict";
 
 var oop = require("../lib/oop");
-var TextMode = require("./text").Mode;
-var Tokenizer = require("../tokenizer").Tokenizer;
+var HtmlMode = require("./html").Mode;
 var VelocityHighlightRules = require("./velocity_highlight_rules").VelocityHighlightRules;
 var FoldMode = require("./folding/velocity").FoldMode;
 
 var Mode = function() {
-    var highlighter = new VelocityHighlightRules();
+    HtmlMode.call(this);
+    this.HighlightRules = VelocityHighlightRules;
     this.foldingRules = new FoldMode();
-    this.$tokenizer = new Tokenizer(highlighter.getRules());
 };
-oop.inherits(Mode, TextMode);
+oop.inherits(Mode, HtmlMode);
 
 (function() {
-  this.lineCommentStart = "##";
-  this.blockComment = {start: "#*", end: "*#"};
+    this.lineCommentStart = "##";
+    this.blockComment = {start: "#*", end: "*#"};
+    this.$id = "ace/mode/velocity";
 }).call(Mode.prototype);
 
 exports.Mode = Mode;

@@ -32,16 +32,15 @@ define(function(require, exports, module) {
 
 var oop = require("../lib/oop");
 var TextMode = require("../mode/text").Mode;
-var Tokenizer = require("../tokenizer").Tokenizer;
 var PgsqlHighlightRules = require("./pgsql_highlight_rules").PgsqlHighlightRules;
 var Range = require("../range").Range;
 
 var Mode = function() {
-    this.$tokenizer = new Tokenizer(new PgsqlHighlightRules().getRules());
+    this.HighlightRules = PgsqlHighlightRules;
 };
 oop.inherits(Mode, TextMode);
 
-(function() {       
+(function() {
     this.lineCommentStart = "--";
     this.blockComment = {start: "/*", end: "*/"};
 
@@ -53,6 +52,7 @@ oop.inherits(Mode, TextMode);
         }
     }
 
+    this.$id = "ace/mode/pgsql";
 }).call(Mode.prototype);
 
 exports.Mode = Mode;

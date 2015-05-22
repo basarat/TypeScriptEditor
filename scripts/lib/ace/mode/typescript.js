@@ -37,17 +37,14 @@ define(function(require, exports, module) {
 
 var oop = require("../lib/oop");
 var jsMode = require("./javascript").Mode;
-var Tokenizer = require("../tokenizer").Tokenizer;
 var TypeScriptHighlightRules = require("./typescript_highlight_rules").TypeScriptHighlightRules;
 var CstyleBehaviour = require("./behaviour/cstyle").CstyleBehaviour;
 var CStyleFoldMode = require("./folding/cstyle").FoldMode;
 var MatchingBraceOutdent = require("./matching_brace_outdent").MatchingBraceOutdent;
-var WorkerClient = require("../worker/worker_client").WorkerClient;
 
 var Mode = function() {
-    var highlighter = new TypeScriptHighlightRules();
+    this.HighlightRules = TypeScriptHighlightRules;
     
-    this.$tokenizer = new Tokenizer(highlighter.getRules());
     this.$outdent = new MatchingBraceOutdent();
     this.$behaviour = new CstyleBehaviour();
     this.foldingRules = new CStyleFoldMode();
@@ -55,26 +52,8 @@ var Mode = function() {
 oop.inherits(Mode, jsMode);
 
 (function() {
-    this.createWorker = function(session) {
-        var worker = new WorkerClient(["ace"], "ace/mode/typescript_worker", "TypeScriptWorker");
-        worker.attachToDocument(session.getDocument());
-
-        worker.on("terminate", function() {
-            session.clearAnnotations();
-        });
-
-        worker.on("compileErrors", function(results) {
-            session.setAnnotations(results.data);
-            session._emit("compileErrors", {data: results.data});
-
-        });
-
-        worker.on("compiled", function(result) {
-            session._emit("compiled", {data: result.data});
-        });
-
-        return worker;
-    };
+    this.createWorker = require("./typescript/typescript_create_worker").createWorker;
+    this.$id = "ace/mode/typescript";
 }).call(Mode.prototype);
 
 exports.Mode = Mode;
