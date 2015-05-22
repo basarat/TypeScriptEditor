@@ -1,4 +1,4 @@
-define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete', 'EditorPosition', 'CompilationService', "ace/lib/lang", 'ace/mode/typescript/typescriptServicesOld', 'ace/mode/typescript/typescriptServicesOld', 'ace/mode/typescript/lightHarness'], function (require, exports, utils_1, ace, range_1, AutoComplete_1, EditorPosition_1, CompilationService_1, lang_1, typescriptServicesOld_1, typescriptServicesOld_2, lightHarness_1) {
+define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete', 'EditorPosition', 'CompilationService', "ace/lib/lang", 'ace/mode/typescript/typescriptServicesOld', 'ace/mode/typescript/typescriptServicesOld', 'ace/mode/typescript/lightHarness', "./tsProject"], function (require, exports, utils_1, ace, range_1, AutoComplete_1, EditorPosition_1, CompilationService_1, lang_1, typescriptServicesOld_1, typescriptServicesOld_2, lightHarness_1, tsProject_1) {
     var aceEditorPosition = null;
     var editor = null;
     var outputEditor = null;
@@ -12,11 +12,13 @@ define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete
     var autoComplete = null;
     var refMarkers = [];
     var errorMarkers = [];
+    var tsProject = tsProject_1.getTSProject();
     function loadLibFiles() {
         var libFiles = ["typescripts/libOld.d.ts"];
         libFiles.forEach(function (libname) {
             utils_1.readFile(libname, function (content) {
                 typeScriptLS.addScript(libname, content.replace(/\r\n?/g, "\n"), true);
+                tsProject.languageServiceHost.addScript(libname, content);
             });
         });
         workerOnCreate(function () {

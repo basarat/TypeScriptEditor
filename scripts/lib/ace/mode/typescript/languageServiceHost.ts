@@ -28,7 +28,7 @@ function assign(target: any, ...items: any[]): any {
 /**
  * The LanguageServiceHost module provides an ts.LanguageServiceHost implementations 
  */
-interface LanguageServiceHost extends ts.LanguageServiceHost {
+export interface LanguageServiceHost extends ts.LanguageServiceHost {
     /**
      * Add a script to the LanguageServiceHost.
      * 

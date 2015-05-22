@@ -28,6 +28,9 @@ var autoComplete = null;
 var refMarkers = [];
 var errorMarkers =[];
 
+// Start updating latest
+import {getTSProject} from "./tsProject";
+var tsProject = getTSProject();
 
 function loadLibFiles(){    
 
@@ -37,6 +40,7 @@ function loadLibFiles(){
     libFiles.forEach(function(libname){
         readFile(libname, function(content){
             typeScriptLS.addScript(libname, content.replace(/\r\n?/g,"\n"), true);
+            tsProject.languageServiceHost.addScript(libname, content);
         });
     });
 

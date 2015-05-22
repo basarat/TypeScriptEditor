@@ -35,6 +35,10 @@ declare module "ace/lib/event_emitter" {
     export = foo;
 }
 
+// hopefully we wouldn't need this eventually. 
+// But the files in the worker are really stingy about relative paths and we are forced to use full paths
+declare var define:any;
+
 /**
  * Our code that need to be TSified
  */
