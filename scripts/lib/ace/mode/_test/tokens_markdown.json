@@ -1,61 +1,61 @@
 [[
    "start",
-  ["text","test: header 1 "]
+  ["text.xml","test: header 1 "]
 ],[
    "start",
   ["markup.heading.1","#"],
-  ["markup.heading","f"]
+  ["heading","f"]
 ],[
    "start",
-  ["text","test: header 2"]
+  ["text.xml","test: header 2"]
 ],[
    "start",
   ["markup.heading.2","##"],
-  ["markup.heading"," foo"]
+  ["heading"," foo"]
 ],[
    "start",
-  ["text","test: header ends with ' #'"]
-],[
-   "start",
-  ["markup.heading.1","#"],
-  ["markup.heading"," # # "]
-],[
-   "start",
-  ["text","test: header ends with '#'"]
+  ["text.xml","test: header ends with ' #'"]
 ],[
    "start",
   ["markup.heading.1","#"],
-  ["markup.heading","foo# "]
+  ["heading"," # # "]
 ],[
    "start",
-  ["text","test: 6+ #s is not a valid header"]
+  ["text.xml","test: header ends with '#'"]
 ],[
    "start",
-  ["text","####### foo"]
+  ["markup.heading.1","#"],
+  ["heading","foo# "]
 ],[
    "start",
-  ["text","test: # followed be only space is not a valid header"]
+  ["text.xml","test: 6+ #s is not a valid header"]
 ],[
    "start",
-  ["text","# "]
+  ["text.xml","####### foo"]
 ],[
    "start",
-  ["text","test: only space between #s is not a valid header"]
+  ["text.xml","test: # followed be only space is not a valid header"]
 ],[
    "start",
-  ["text","#  #"]
+  ["text.xml","# "]
+],[
+   "start",
+  ["text.xml","test: only space between #s is not a valid header"]
+],[
+   "start",
+  ["text.xml","#  #"]
 ],[
    "allowBlock"
 ],[
    "start",
   ["markup.heading.1","#"],
-  ["markup.heading"," test links  "],
+  ["heading"," test links  "],
   ["text","["],
   ["string","Cloud9 IDE"],
   ["text","]("],
   ["markup.underline","http://www.c9.io/"],
   ["text",")"],
-  ["markup.heading"," #"]
+  ["heading"," #"]
 ],[
    "listblock",
   ["markup.list","* "],
@@ -64,29 +64,49 @@
   ["text","]("],
   ["markup.underline","http://ajaxorg.github.com/ace/"],
   ["text",")"],
-  ["markup.list"," "]
+  ["list"," "],
+  ["text","["],
+  ["string","+"],
+  ["text","]("],
+  ["markup.underline","escape(\\) "],
+  ["text",")"],
+  ["list"," "],
+  ["text","["],
+  ["string","+"],
+  ["text","]("],
+  ["markup.underline","a"],
+  ["string"," \"title\""],
+  ["text",")"],
+  ["list"," "],
+  ["text","["],
+  ["string","+"],
+  ["text","]("],
+  ["markup.underline","a"],
+  ["string"," \"space\" "],
+  ["text",")"]
 ],[
    "listblock",
-  ["markup.list","* usually "],
-  ["string","*work*"],
-  ["markup.list"," fine ("],
-  ["string","_em_"],
-  ["markup.list",")"]
+  ["markup.list","* "],
+  ["list","usually "],
+  ["string.emphasis","*work*"],
+  ["list"," fine ("],
+  ["string.emphasis","_em_"],
+  ["list",")"]
 ],[
    "listblock",
-  ["markup.list","in lists"]
+  ["list","in lists"]
 ],[
    "start"
 ],[
    "start",
-  ["text","in plain text "],
-  ["meta.tag","<"],
-  ["meta.tag.tag-name","b"],
-  ["meta.tag.r",">"],
-  ["text","http://ace.ajaxorg.com"],
-  ["meta.tag","<"],
-  ["meta.tag.tag-name","b"],
-  ["meta.tag.r",">"]
+  ["text.xml","in plain text "],
+  ["meta.tag.punctuation.tag-open.xml","<"],
+  ["meta.tag.tag-name.xml","b"],
+  ["meta.tag.punctuation.tag-close.xml",">"],
+  ["text.xml","http://ace.ajaxorg.com"],
+  ["meta.tag.punctuation.tag-open.xml","<"],
+  ["meta.tag.tag-name.xml","b"],
+  ["meta.tag.punctuation.tag-close.xml",">"]
 ],[
    "allowBlock"
 ],[

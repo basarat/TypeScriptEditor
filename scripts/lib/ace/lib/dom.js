@@ -31,9 +31,6 @@
 define(function(require, exports, module) {
 "use strict";
 
-if (typeof document == "undefined")
-    return;
-
 var XHTML_NS = "http://www.w3.org/1999/xhtml";
 
 exports.getDocumentHead = function(doc) {
@@ -49,7 +46,7 @@ exports.createElement = function(tag, ns) {
 };
 
 exports.hasCssClass = function(el, name) {
-    var classes = el.className.split(/\s+/g);
+    var classes = (el.className || "").split(/\s+/g);
     return classes.indexOf(name) !== -1;
 };
 
@@ -174,6 +171,10 @@ exports.getInnerHeight = function(element) {
         element.clientHeight
     );
 };
+
+
+if (typeof document == "undefined")
+    return;
 
 if (window.pageYOffset !== undefined) {
     exports.getPageScrollTop = function() {

@@ -33,17 +33,16 @@ define(function(require, exports, module) {
 
 var oop = require("../lib/oop");
 var TextMode = require("./text").Mode;
-var Tokenizer = require("../tokenizer").Tokenizer;
 var FtlHighlightRules = require("./ftl_highlight_rules").FtlHighlightRules;
 
 var Mode = function() {
-    var highlighter = new FtlHighlightRules();
-    this.$tokenizer = new Tokenizer(highlighter.getRules());
+    this.HighlightRules = FtlHighlightRules;
 };
 oop.inherits(Mode, TextMode);
 
 (function() {
 
+    this.$id = "ace/mode/ftl";
 }).call(Mode.prototype);
 
 exports.Mode = Mode;

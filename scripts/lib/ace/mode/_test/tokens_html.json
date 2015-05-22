@@ -1,51 +1,63 @@
 [[
    "start",
-  ["meta.tag","<"],
-  ["meta.tag.tag-name","html"],
-  ["meta.tag.r",">"]
+  ["meta.tag.punctuation.tag-open.xml","<"],
+  ["meta.tag.tag-name.xml","html"],
+  ["meta.tag.punctuation.tag-close.xml",">"]
 ],[
    "start",
-  ["meta.tag","<"],
-  ["meta.tag.tag-name.script","script"],
-  ["text"," "],
-  ["entity.other.attribute-name","a"],
-  ["keyword.operator","="],
-  ["string","'a'"],
-  ["meta.tag.r",">"],
+  ["meta.tag.punctuation.tag-open.xml","<"],
+  ["meta.tag.tag-name.xml","scripts"],
+  ["meta.tag.punctuation.tag-close.xml",">"]
+],[
+   "start",
+  ["meta.tag.punctuation.tag-open.xml","<"],
+  ["meta.tag.script.tag-name.xml","script"],
+  ["text.tag-whitespace.xml"," "],
+  ["entity.other.attribute-name.xml","a"],
+  ["keyword.operator.attribute-equals.xml","="],
+  ["string.attribute-value.xml","'a'"],
+  ["meta.tag.punctuation.tag-close.xml",">"],
   ["storage.type","var"],
-  ["meta.tag","</"],
-  ["meta.tag.tag-name.script","script"],
-  ["meta.tag.r",">"],
-  ["text","'123'"]
-],[
-   "tag_qqstring",
-  ["meta.tag","<"],
-  ["meta.tag.tag-name.anchor","a"],
   ["text"," "],
-  ["entity.other.attribute-name","href"],
-  ["keyword.operator","="],
-  ["string","\"abc"]
+  ["string","\"</scripts>"],
+  ["meta.tag.punctuation.end-tag-open.xml","</"],
+  ["meta.tag.script.tag-name.xml","script"],
+  ["meta.tag.punctuation.tag-close.xml",">"],
+  ["text.xml","'123'"]
 ],[
    "start",
-  ["string","  def\""],
-  ["meta.tag.r",">"]
+  ["meta.tag.punctuation.end-tag-open.xml","</"],
+  ["meta.tag.tag-name.xml","scripts"],
+  ["meta.tag.punctuation.tag-close.xml",">"]
 ],[
-   "tag_qstring",
-  ["meta.tag","<"],
-  ["meta.tag.tag-name.anchor","a"],
-  ["text"," "],
-  ["entity.other.attribute-name","href"],
-  ["keyword.operator","="],
-  ["string","'abc"]
+   ["string.attribute-value.xml0","tag_stuff"],
+  ["meta.tag.punctuation.tag-open.xml","<"],
+  ["meta.tag.anchor.tag-name.xml","a"],
+  ["text.tag-whitespace.xml"," "],
+  ["entity.other.attribute-name.xml","href"],
+  ["keyword.operator.attribute-equals.xml","="],
+  ["string.attribute-value.xml","\"abc"]
 ],[
    "start",
-  ["string","def\\'"],
-  ["meta.tag.r",">"]
+  ["string.attribute-value.xml","  def\""],
+  ["meta.tag.punctuation.tag-close.xml",">"]
+],[
+   ["string.attribute-value.xml","tag_stuff"],
+  ["meta.tag.punctuation.tag-open.xml","<"],
+  ["meta.tag.anchor.tag-name.xml","a"],
+  ["text.tag-whitespace.xml"," "],
+  ["entity.other.attribute-name.xml","href"],
+  ["keyword.operator.attribute-equals.xml","="],
+  ["string.attribute-value.xml","'abc"]
+],[
+   "start",
+  ["string.attribute-value.xml","def\\'"],
+  ["meta.tag.punctuation.tag-close.xml",">"]
 ],[
    "start"
 ],[
    "start",
-  ["meta.tag","</"],
-  ["meta.tag.tag-name","html"],
-  ["meta.tag.r",">"]
+  ["meta.tag.punctuation.end-tag-open.xml","</"],
+  ["meta.tag.tag-name.xml","html"],
+  ["meta.tag.punctuation.tag-close.xml",">"]
 ]]

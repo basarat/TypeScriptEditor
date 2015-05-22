@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2010, Ajax.org B.V.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -14,7 +14,7 @@
  *     * Neither the name of Ajax.org B.V. nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -33,7 +33,6 @@ define(function(require, exports, module) {
 
 var oop = require("../lib/oop");
 var TextMode = require("./text").Mode;
-var Tokenizer = require("../tokenizer").Tokenizer;
 var PhpHighlightRules = require("./php_highlight_rules").PhpHighlightRules;
 var PhpLangHighlightRules = require("./php_highlight_rules").PhpLangHighlightRules;
 var MatchingBraceOutdent = require("./matching_brace_outdent").MatchingBraceOutdent;
@@ -42,16 +41,17 @@ var WorkerClient = require("../worker/worker_client").WorkerClient;
 var CstyleBehaviour = require("./behaviour/cstyle").CstyleBehaviour;
 var CStyleFoldMode = require("./folding/cstyle").FoldMode;
 var unicode = require("../unicode");
+var HtmlMode = require("./html").Mode;
+var JavaScriptMode = require("./javascript").Mode;
+var CssMode = require("./css").Mode;
 
-var Mode = function(opts) {
-    var inline = opts && opts.inline;
-    var HighlightRules = inline ? PhpLangHighlightRules : PhpHighlightRules;
-    this.$tokenizer = new Tokenizer(new HighlightRules().getRules());
+var PhpMode = function(opts) {
+    this.HighlightRules = PhpLangHighlightRules;
     this.$outdent = new MatchingBraceOutdent();
     this.$behaviour = new CstyleBehaviour();
     this.foldingRules = new CStyleFoldMode();
 };
-oop.inherits(Mode, TextMode);
+oop.inherits(PhpMode, TextMode);
 
 (function() {
 
@@ -61,7 +61,7 @@ oop.inherits(Mode, TextMode);
         + unicode.packages.Nd
         + unicode.packages.Pc + "\_]+", "g"
     );
-    
+
     this.nonTokenRe = new RegExp("^(?:[^"
         + unicode.packages.L
         + unicode.packages.Mn + unicode.packages.Mc
@@ -69,29 +69,28 @@ oop.inherits(Mode, TextMode);
         + unicode.packages.Pc + "\_]|\s])+", "g"
     );
 
-       
-    this.lineCommentStart = ["#", "//"];
+
+    this.lineCommentStart = ["//", "#"];
     this.blockComment = {start: "/*", end: "*/"};
 
     this.getNextLineIndent = function(state, line, tab) {
         var indent = this.$getIndent(line);
 
-        var tokenizedLine = this.$tokenizer.getLineTokens(line, state);
+        var tokenizedLine = this.getTokenizer().getLineTokens(line, state);
         var tokens = tokenizedLine.tokens;
         var endState = tokenizedLine.state;
-
 
         if (tokens.length && tokens[tokens.length-1].type == "comment") {
             return indent;
         }
 
-        if (state == "php-start") {
+        if (state == "start") {
             var match = line.match(/^.*[\{\(\[\:]\s*$/);
             if (match) {
                 indent += tab;
             }
-        } else if (state == "php-doc-start") {
-            if (endState != "php-doc-start") {
+        } else if (state == "doc-start") {
+            if (endState != "doc-start") {
                 return "";
             }
             var match = line.match(/^\s*(\/?)\*/);
@@ -114,21 +113,48 @@ oop.inherits(Mode, TextMode);
         this.$outdent.autoOutdent(doc, row);
     };
 
+    this.$id = "ace/mode/php-inline";
+}).call(PhpMode.prototype);
+
+var Mode = function(opts) {
+    if (opts && opts.inline) {
+        var mode = new PhpMode();
+        mode.createWorker = this.createWorker;
+        mode.inlinePhp = true;
+        return mode;
+    }
+    HtmlMode.call(this);
+    this.HighlightRules = PhpHighlightRules;
+    this.createModeDelegates({
+        "js-": JavaScriptMode,
+        "css-": CssMode,
+        "php-": PhpMode
+    });
+    this.foldingRules.subModes["php-"] = new CStyleFoldMode();
+};
+oop.inherits(Mode, HtmlMode);
+
+(function() {
+
     this.createWorker = function(session) {
         var worker = new WorkerClient(["ace"], "ace/mode/php_worker", "PhpWorker");
         worker.attachToDocument(session.getDocument());
 
-        worker.on("error", function(e) {
+        if (this.inlinePhp)
+            worker.call("setOptions", [{inline: true}]);
+
+        worker.on("annotate", function(e) {
             session.setAnnotations(e.data);
         });
 
-        worker.on("ok", function() {
+        worker.on("terminate", function() {
             session.clearAnnotations();
         });
 
         return worker;
     };
 
+    this.$id = "ace/mode/php";
 }).call(Mode.prototype);
 
 exports.Mode = Mode;

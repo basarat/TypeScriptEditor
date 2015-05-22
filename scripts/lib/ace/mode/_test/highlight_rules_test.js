@@ -1,23 +1,70 @@
 var fs = require("fs");
+var path = require("path");
 if (!fs.existsSync)
-    fs.existsSync = require("path").existsSync;
+    fs.existsSync = path.existsSync;
 
 require("amd-loader");
 
 var cwd = __dirname + "/";
+var root = path.normalize(cwd + Array(5).join("../"));
+
+function jsFileList(path, filter) {
+    if (!filter) filter = /_test/;
+    return fs.readdirSync(path).map(function(x) {
+        if (x.slice(-3) == ".js" && !filter.test(x) && !/\s/.test(x))
+            return x.slice(0, -3);
+    }).filter(Boolean);
+}
+
+function modeList() {
+    return jsFileList(cwd + "../", /_highlight_rules|_test|_worker|xml_util|_outdent|behaviour|completions/);
+}
+
+function checkModes() {
+    modeList().forEach(function(modeName) {
+        try {
+            var Mode = require("../" + modeName).Mode;
+        } catch(e) {
+            console.warn("Can't load mode :" + modeName, e);
+            return;
+        }
+        var m = new Mode();
+        if (!m.lineCommentStart && !m.blockComment)
+            console.warn("missing comment in " + modeName);
+        if (!m.$id)
+            console.warn("missing id in " + modeName);
+        var tokenizer = (new Mode).getTokenizer();
+        if (m.lineCommentStart) {
+            if (Array.isArray(m.lineCommentStart)) {
+                m.lineCommentStart.forEach(function(x) {
+                    testLineComment(tokenizer, x, modeName)
+                });
+            } else {
+                testLineComment(tokenizer, m.lineCommentStart, modeName)
+            }
+        }
+        // if (m.blockComment) {
+        //     var tokens = tok.getLineTokens(m.lineCommentStart, "start");
+        //     if (!/comment/.test(tokens[0]))
+        //         console.warn("broken lineCommentStart in " + modeName);
+        // }
+    });
+    
+    function testLineComment(tokenizer, commentStart, modeName) {
+        var tokens = tokenizer.getLineTokens(commentStart + " ", "start").tokens;
+        if (!/comment/.test(tokens[0].type))
+            console.warn("broken lineCommentStart in " + modeName);
+    }
+}
 
 function generateTestData() {
-    var root = Array(5).join("../") + "/demo/editor/docs";
-    var docs = fs.readdirSync(cwd + root);
+    var docRoot = root + "/demo/kitchen-sink/docs";
+    var docs = fs.readdirSync(docRoot);
     var specialDocs = fs.readdirSync(cwd);
-    var modes = fs.readdirSync(cwd + "../").filter(function(x){
-        return !/(_highlight_rules|behaviour|worker)\.js$/.test(x) && /\.js$/.test(x);
-    }).map(function(x) {
-        return x.replace(/\.js$/, "");
-    });
+    var modes = modeList();
 
-    console.log("Docs:", docs);
-    console.log("Modes:", modes);
+    // console.log("Docs:", docs);
+    // console.log("Modes:", modes);
 
     docs.forEach(function(docName) {
         var p = docName.toLowerCase().split(".");
@@ -33,31 +80,38 @@ function generateTestData() {
 
         var filePath = "text_" + modeName + ".txt";
         if (specialDocs.indexOf(filePath) == -1) {
-            filePath = root + "/" + docName;
+            filePath = docRoot + "/" + docName;
+        } else {
+            filePath = cwd + filePath;
         }
 
-        var text = fs.readFileSync(cwd + filePath, "utf8");
+        var text = fs.readFileSync(filePath, "utf8");
         try {
             var Mode = require("../" + modeName).Mode;
         } catch(e) {
             console.warn("Can't load mode :" + modeName, p, e);
             return;
         }
+        console.log(modeName);
         var tokenizer = new Mode().getTokenizer();
 
         var state = "start";
-        var data = text.split(/\n|\r|\r\n/).map(function(line) {
+        var data = text.split(/\r\n|\r|\n/).map(function(line) {
             var data = tokenizer.getLineTokens(line, state);
             var tmp = [];
             tmp.push(JSON.stringify(data.state));
+            var tokenizedLine = "";
             data.tokens.forEach(function(x) {
+                tokenizedLine += x.value;
                 tmp.push(JSON.stringify([x.type, x.value]));
             });
+            if (tokenizedLine != line)
+                tmp.push(JSON.stringify(line));
             state = data.state;
             return tmp.join(",\n  ");
         });
         
-        jsonStr = "[[\n   " + data.join("\n],[\n   ") + "\n]]";
+        var jsonStr = "[[\n   " + data.join("\n],[\n   ") + "\n]]";
         fs.writeFileSync(cwd + "tokens_" + modeName + ".json", jsonStr, "utf8");
     });
 }
@@ -85,29 +139,31 @@ function testMode(modeName, i) {
         lineData.values = [];
         lineData.types = [];
         lineData.state = lineData.shift();
+        var line = null;
+        if (typeof lineData[lineData.length - 1] == "string")
+            line = lineData.pop();
         lineData.forEach(function(x) {
             lineData.types.push(x[0]);
             lineData.values.push(x[1]);
         });
-
-        var line = lineData.values.join("");
+        if (typeof line != "string")
+            line = lineData.values.join("");
 
         var tokens = tokenizer.getLineTokens(line, state);
         var values = tokens.tokens.map(function(x) {return x.value;});
         var types = tokens.tokens.map(function(x) {return x.type;});
 
-        var success = true;
         var err = testEqual([
-            lineData.state, tokens.state,
+            JSON.stringify(lineData.state), JSON.stringify(tokens.state),
             lineData.types, types,
             lineData.values, values]);
         
         if (err) {
-            console.log(line)
+            console.log(line);
             throw "error";
         }
 
-        state = lineData.state;
+        state = tokens.state;
     });
 }
 function testEqual(a) {
@@ -143,10 +199,12 @@ function padNumber(num, digits) {
 // cli
 var arg = process.argv[2];
 if (!arg)
-    test()
+    test();
 else if (/--?g(en)?/.test(arg))
     generateTestData(process.argv.splice(3));
+else if (/--?c(heck)?/.test(arg))
+    checkModes(process.argv.splice(3));
 else if (/\d+/.test(arg))
     test(parseInt(process.argv[2],10) || 0);
 else
-    testMode(arg, -1)
+    testMode(arg, -1);

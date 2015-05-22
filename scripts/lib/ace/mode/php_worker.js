@@ -43,12 +43,17 @@ var PhpWorker = exports.PhpWorker = function(sender) {
 oop.inherits(PhpWorker, Mirror);
 
 (function() {
-
+    this.setOptions = function(opts) {
+        this.inlinePhp = opts && opts.inline;
+    };
+    
     this.onUpdate = function() {
         var value = this.doc.getValue();
         var errors = [];
 
         // var start = new Date();
+        if (this.inlinePhp)
+            value = "<?" + value + "?>";
 
         var tokens = PHP.Lexer(value, {short_open_tag: 1});
         try {
@@ -64,11 +69,7 @@ oop.inherits(PhpWorker, Mirror);
 
         // console.log("lint time: " + (new Date() - start));
 
-        if (errors.length) {
-            this.sender.emit("error", errors);
-        } else {
-            this.sender.emit("ok");
-        }
+        this.sender.emit("annotate", errors);
     };
 
 }).call(PhpWorker.prototype);

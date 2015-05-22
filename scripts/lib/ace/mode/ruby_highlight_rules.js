@@ -141,9 +141,71 @@ var RubyHighlightRules = function() {
                 regex : "[/](?:(?:\\[(?:\\\\]|[^\\]])+\\])|(?:\\\\/|[^\\]/]))*[/]\\w*\\s*(?=[).,;]|$)"
             },
 
-            qString,
-            qqString,
-            tString,
+            [{
+                regex: "[{}]", onMatch: function(val, state, stack) {
+                    this.next = val == "{" ? this.nextState : "";
+                    if (val == "{" && stack.length) {
+                        stack.unshift("start", state);
+                        return "paren.lparen";
+                    }
+                    if (val == "}" && stack.length) {
+                        stack.shift();
+                        this.next = stack.shift();
+                        if (this.next.indexOf("string") != -1)
+                            return "paren.end";
+                    }
+                    return val == "{" ? "paren.lparen" : "paren.rparen";
+                },
+                nextState: "start"
+            }, {
+                token : "string.start",
+                regex : /"/,
+                push  : [{
+                    token : "constant.language.escape",
+                    regex : /\\(?:[nsrtvfbae'"\\]|c.|C-.|M-.(?:\\C-.)?|[0-7]{3}|x[\da-fA-F]{2}|u[\da-fA-F]{4})/
+                }, {
+                    token : "paren.start",
+                    regex : /\#{/,
+                    push  : "start"
+                }, {
+                    token : "string.end",
+                    regex : /"/,
+                    next  : "pop"
+                }, {
+                    defaultToken: "string"
+                }]
+            }, {
+                token : "string.start",
+                regex : /`/,
+                push  : [{
+                    token : "constant.language.escape",
+                    regex : /\\(?:[nsrtvfbae'"\\]|c.|C-.|M-.(?:\\C-.)?|[0-7]{3}|x[\da-fA-F]{2}|u[\da-fA-F]{4})/
+                }, {
+                    token : "paren.start",
+                    regex : /\#{/,
+                    push  : "start"
+                }, {
+                    token : "string.end",
+                    regex : /`/,
+                    next  : "pop"
+                }, {
+                    defaultToken: "string"
+                }]
+            }, {
+                token : "string.start",
+                regex : /'/,
+                push  : [{
+                    token : "constant.language.escape",
+                    regex : /\\['\\]/
+                },  {
+                    token : "string.end",
+                    regex : /'/,
+                    next  : "pop"
+                }, {
+                    defaultToken: "string"
+                }]
+            }],
+            // TODO: add support for %[QqxWwrs][{[(]
 
             {
                 token : "text", // namespaces aren't symbols
@@ -188,11 +250,13 @@ var RubyHighlightRules = function() {
                 rules: {
                     heredoc: [{
                         onMatch:  function(value, currentState, stack) {
-                            if (value == stack[1]) {
+                            if (value === stack[1]) {
                                 stack.shift();
                                 stack.shift();
+                                this.next = stack[0] || "start";
                                 return "support.class";
                             }
+                            this.next = "";
                             return "string";
                         },
                         regex: ".*$",
@@ -203,17 +267,30 @@ var RubyHighlightRules = function() {
                         regex: "^ +"
                     }, {
                         onMatch:  function(value, currentState, stack) {
-                            if (value == stack[1]) {
+                            if (value === stack[1]) {
                                 stack.shift();
                                 stack.shift();
+                                this.next = stack[0] || "start";
                                 return "support.class";
                             }
+                            this.next = "";
                             return "string";
                         },
                         regex: ".*$",
                         next: "start"
                     }]
                 }
+            }, {
+                regex : "$",
+                token : "empty",
+                next : function(currentState, stack) {
+                    if (stack[0] === "heredoc" || stack[0] === "indentedHeredoc")
+                        return stack[0];
+                    return currentState;
+                }
+            }, {
+               token : "string.character",
+               regex : "\\B\\?."
             }, {
                 token : "keyword.operator",
                 regex : "!|\\$|%|&|\\*|\\-\\-|\\-|\\+\\+|\\+|~|===|==|=|!=|!==|<=|>=|<<=|>>=|>>>=|<>|<|>|!|&&|\\|\\||\\?\\:|\\*=|%=|\\+=|\\-=|&=|\\^=|\\b(?:in|instanceof|new|delete|typeof|void)"

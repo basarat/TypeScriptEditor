@@ -280,7 +280,7 @@ module.exports = {
         session.setUseWrapMode(true);
         session.setWrapLimitRange(12, 12);
         session.adjustWrapLimit(80);
-
+        session.setOption("wrapMethod", "text");
         assert.position(session.documentToScreenPosition(0, 11), 0, 11);
         assert.position(session.documentToScreenPosition(0, 12), 1, 0);
     },
@@ -380,17 +380,20 @@ module.exports = {
             line = lang.stringTrimRight(line);
             var tokens = EditSession.prototype.$getDisplayTokens(line);
             var splits = EditSession.prototype.$computeWrapSplits(tokens, wrapLimit, tabSize);
-            // console.log("String:", line, "Result:", splits, "Expected:", assertEqual);
+            console.log("String:", line, "Result:", splits, "Expected:", assertEqual);
+
             assert.ok(splits.length == assertEqual.length);
             for (var i = 0; i < splits.length; i++) {
                 assert.ok(splits[i] == assertEqual[i]);
             }
         }
-
+        
+        EditSession.prototype.$wrapAsCode = true;
+        EditSession.prototype.$indentedSoftWrap = false;
         // Basic splitting.
         computeAndAssert("foo bar foo bar", [ 12 ]);
         computeAndAssert("foo bar f   bar", [ 12 ]);
-        computeAndAssert("foo bar f     r", [ 14 ]);
+        computeAndAssert("foo bar f     r", [ 12 ]); // 14 if we enable 
         computeAndAssert("foo bar foo bar foo bara foo", [12, 25]);
 
         // Don't split if there is only whitespaces/tabs at the end of the line.
@@ -406,18 +409,32 @@ module.exports = {
         computeAndAssert("foo \t \tbar", [ 7 ]);
 
         // Ignore spaces/tabs at beginning of split.
-        computeAndAssert("foo \t \t   \t \t bar", [ 14 ]);
+        computeAndAssert("foo \t \t   \t \t bar", [ 7 ]); // 14
 
         // Test wrapping for asian characters.
         computeAndAssert("ぁぁ", [1], 2);
         computeAndAssert(" ぁぁ", [1, 2], 2);
         computeAndAssert(" ぁ\tぁ", [1, 3], 2);
-        computeAndAssert(" ぁぁ\tぁ", [1, 4], 4);
+        computeAndAssert(" ぁぁ\tぁ", [2, 4], 4);
+        computeAndAssert("ぁぁ ぁぁ\tぁ", [3, 6], 6);
 
         // Test wrapping for punctuation.
-        computeAndAssert(" ab.c;ef++", [1, 3, 5, 7, 8], 2);
+        computeAndAssert(" ab.c;ef++", [2, 4, 6, 8], 2);
+        computeAndAssert(" ab.c;ef++", [3, 5, 8], 3);
         computeAndAssert(" a.b", [1, 2, 3], 1);
         computeAndAssert("#>>", [1, 2], 1);
+        
+        // Test wrapping for punctuation in
+        EditSession.prototype.$wrapAsCode = false;
+        computeAndAssert("ab cde, Juhu kinners", [3, 8, 13, 19], 6);
+
+        // test indented wrapping
+        EditSession.prototype.$indentedSoftWrap = true;
+        computeAndAssert("foo bar foo bar foo bara foo", [12, 25]);
+        computeAndAssert("fooooooooooooooooooooooooooo", [12, 24]);
+        computeAndAssert("\t\tfoo bar fooooooooooobooooooo", [6, 10, 16, 22, 28]);
+        computeAndAssert("\t\t\tfoo bar fooooooooooobooooooo", [3, 7, 11, 17, 23, 29]);
+        computeAndAssert("\tfoo \t \t   \t \t bar", [6, 12]); // 14
     },
 
     "test get longest line" : function() {
@@ -425,12 +442,12 @@ module.exports = {
         session.setTabSize(4);
         assert.equal(session.getScreenWidth(), 2);
 
-        session.doc.insertNewLine({row: 0, column: Infinity});
-        session.doc.insertLines(1, ["123"]);
+        session.doc.insertMergedLines({row: 0, column: Infinity}, ['', '']);
+        session.doc.insertFullLines(1, ["123"]);
         assert.equal(session.getScreenWidth(), 3);
 
-        session.doc.insertNewLine({row: 0, column: Infinity});
-        session.doc.insertLines(1, ["\t\t"]);
+        session.doc.insertMergedLines({row: 0, column: Infinity}, ['', '']);
+        session.doc.insertFullLines(1, ["\t\t"]);
 
         assert.equal(session.getScreenWidth(), 8);
 
@@ -454,9 +471,9 @@ module.exports = {
 
         session.setUseWrapMode(true);
 
-        document.insertLines(0, ["a", "b"]);
-        document.insertLines(2, ["c", "d"]);
-        document.removeLines(1, 2);
+        document.insertFullLines(0, ["a", "b"]);
+        document.insertFullLines(2, ["c", "d"]);
+        document.removeFullLines(1, 2);
     },
 
     "test wrapMode init has to create wrapData array": function() {
@@ -932,7 +949,7 @@ module.exports = {
                 fail = true;
             }
             if (fail != shouldFail) {
-                throw "Expected to get an exception";
+                throw new Error("Expected to get an exception");
             }
         }
 
@@ -1037,11 +1054,34 @@ module.exports = {
         assertArray(session.getAnnotations(), []);
         session.setAnnotations([annotation]);
         assertArray(session.getAnnotations(), [annotation]);
+    },
+    
+    "test: mode loading" : function(next) {
+        if (!require.undef) {
+            console.log("Skipping test: This test only runs in the browser");
+            next();
+            return;
+        }
+        var session = new EditSession([]);
+        session.setMode("ace/mode/javascript");
+        assert.equal(session.$modeid, "ace/mode/javascript");
+        session.on("changeMode", function() {
+            assert.equal(session.$modeid, "ace/mode/javascript");
+        });
+        session.setMode("ace/mode/sh", function(mode) {
+            assert.ok(!mode);
+        });
+        setTimeout(function() {
+            session.setMode("ace/mode/javascript", function(mode) {
+                session.setMode("ace/mode/javascript");
+                assert.equal(session.$modeid, "ace/mode/javascript");
+                next();
+            });
+        }, 0);
     }
 };
-
 });
 
 if (typeof module !== "undefined" && module === require.main) {
-    require("asyncjs").test.testcase(module.exports).exec()
+    require("asyncjs").test.testcase(module.exports).exec();
 }

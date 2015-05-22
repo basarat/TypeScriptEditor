@@ -42,13 +42,10 @@ define(function(require, exports, module) {
 
 var oop = require("../lib/oop");
 var TextMode = require("./text").Mode;
-var Tokenizer = require("../tokenizer").Tokenizer;
 var VBScriptHighlightRules = require("./vbscript_highlight_rules").VBScriptHighlightRules;
 
 var Mode = function() {
-    var highlighter = new VBScriptHighlightRules();
-    
-    this.$tokenizer = new Tokenizer(highlighter.getRules());
+    this.HighlightRules = VBScriptHighlightRules;
 };
 oop.inherits(Mode, TextMode);
 
@@ -56,6 +53,7 @@ oop.inherits(Mode, TextMode);
        
     this.lineCommentStart = ["'", "REM"];
     
+    this.$id = "ace/mode/vbscript";
 }).call(Mode.prototype);
 
 exports.Mode = Mode;

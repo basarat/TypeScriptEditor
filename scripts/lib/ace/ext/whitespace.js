@@ -46,7 +46,6 @@ exports.$detectIndentation = function(lines, fallback) {
         if (!/^\s*[^*+\-\s]/.test(line))
             continue;
 
-        var tabs = line.match(/^\t*/)[0].length;
         if (line[0] == "\t")
             tabIndents++;
 
@@ -61,10 +60,10 @@ exports.$detectIndentation = function(lines, fallback) {
         prevSpaces = spaces;
 
         // ignore lines ending with backslash
-        while (line[line.length - 1] == "\\")
+        while (i < max && line[line.length - 1] == "\\")
             line = lines[i++];
-    };
-
+    }
+    
     function getScore(indent) {
         var score = 0;
         for (var i = indent; i < stats.length; i += indent)
@@ -77,15 +76,17 @@ exports.$detectIndentation = function(lines, fallback) {
     var first = {score: 0, length: 0};
     var spaceIndents = 0;
     for (var i = 1; i < 12; i++) {
+        var score = getScore(i);
         if (i == 1) {
-            spaceIndents = getScore(i);
-            var score = 1;
+            spaceIndents = score;
+            score = stats[1] ? 0.9 : 0.8;
+            if (!stats.length)
+                score = 0
         } else
-            var score = getScore(i) / spaceIndents;
+            score /= spaceIndents;
 
-        if (changes[i]) {
+        if (changes[i])
             score += changes[i] / changesTotal;
-        }
 
         if (score > first.score)
             first = {score: score, length: i};
@@ -97,7 +98,7 @@ exports.$detectIndentation = function(lines, fallback) {
     if (tabIndents > spaceIndents + 1)
         return {ch: "\t", length: tabLength};
 
-    if (spaceIndents + 1 > tabIndents)
+    if (spaceIndents > tabIndents + 1)
         return {ch: " ", length: tabLength};
 };
 
@@ -113,15 +114,17 @@ exports.detectIndentation = function(session) {
     return indent;
 };
 
-exports.trimTrailingSpace = function(session) {
+exports.trimTrailingSpace = function(session, trimEmpty) {
     var doc = session.getDocument();
     var lines = doc.getAllLines();
+    
+    var min = trimEmpty ? -1 : 0;
 
     for (var i = 0, l=lines.length; i < l; i++) {
         var line = lines[i];
         var index = line.search(/\s+$/);
 
-        if (index !== -1)
+        if (index > min)
             doc.removeInLine(i, index, line.length);
     }
 };
@@ -160,14 +163,14 @@ exports.convertIndentation = function(session, ch, len) {
 };
 
 exports.$parseStringArg = function(text) {
-    var indent = {}
+    var indent = {};
     if (/t/.test(text))
         indent.ch = "\t";
     else if (/s/.test(text))
         indent.ch = " ";
     var m = text.match(/\d+/);
     if (m)
-        indent.length = parseInt(m[0]);
+        indent.length = parseInt(m[0], 10);
     return indent;
 };
 
@@ -179,7 +182,7 @@ exports.$parseArg = function(arg) {
     if (typeof arg.text == "string")
         return exports.$parseStringArg(arg.text);
     return arg;
-}
+};
 
 exports.commands = [{
     name: "detectIndentation",
@@ -196,7 +199,7 @@ exports.commands = [{
     name: "convertIndentation",
     exec: function(editor, arg) {
         var indent = exports.$parseArg(arg);
-        exports.convertIndentation(editor.session, arg.ch, arg.length);
+        exports.convertIndentation(editor.session, indent.ch, indent.length);
     }
 }, {
     name: "setIndentation",
@@ -205,6 +208,6 @@ exports.commands = [{
         indent.length && editor.session.setTabSize(indent.length);
         indent.ch && editor.session.setUseSoftTabs(indent.ch == " ");
     }
-}]
+}];
 
 });

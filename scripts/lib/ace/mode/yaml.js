@@ -33,13 +33,12 @@ define(function(require, exports, module) {
 
 var oop = require("../lib/oop");
 var TextMode = require("./text").Mode;
-var Tokenizer = require("../tokenizer").Tokenizer;
 var YamlHighlightRules = require("./yaml_highlight_rules").YamlHighlightRules;
 var MatchingBraceOutdent = require("./matching_brace_outdent").MatchingBraceOutdent;
 var FoldMode = require("./folding/coffee").FoldMode;
 
 var Mode = function() {
-    this.$tokenizer = new Tokenizer(new YamlHighlightRules().getRules());
+    this.HighlightRules = YamlHighlightRules;
     this.$outdent = new MatchingBraceOutdent();
     this.foldingRules = new FoldMode();
 };
@@ -71,6 +70,7 @@ oop.inherits(Mode, TextMode);
     };
 
 
+    this.$id = "ace/mode/yaml";
 }).call(Mode.prototype);
 
 exports.Mode = Mode;

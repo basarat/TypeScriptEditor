@@ -33,14 +33,13 @@ define(function(require, exports, module) {
 
 var oop = require("../lib/oop");
 var TextMode = require("./text").Mode;
-var Tokenizer = require("../tokenizer").Tokenizer;
 var LessHighlightRules = require("./less_highlight_rules").LessHighlightRules;
 var MatchingBraceOutdent = require("./matching_brace_outdent").MatchingBraceOutdent;
 var CssBehaviour = require("./behaviour/css").CssBehaviour;
 var CStyleFoldMode = require("./folding/cstyle").FoldMode;
 
 var Mode = function() {
-    this.$tokenizer = new Tokenizer(new LessHighlightRules().getRules());
+    this.HighlightRules = LessHighlightRules;
     this.$outdent = new MatchingBraceOutdent();
     this.$behaviour = new CssBehaviour();
     this.foldingRules = new CStyleFoldMode();
@@ -56,7 +55,7 @@ oop.inherits(Mode, TextMode);
         var indent = this.$getIndent(line);
 
         // ignore braces in comments
-        var tokens = this.$tokenizer.getLineTokens(line, state).tokens;
+        var tokens = this.getTokenizer().getLineTokens(line, state).tokens;
         if (tokens.length && tokens[tokens.length-1].type == "comment") {
             return indent;
         }
@@ -77,6 +76,7 @@ oop.inherits(Mode, TextMode);
         this.$outdent.autoOutdent(doc, row);
     };
 
+    this.$id = "ace/mode/less";
 }).call(Mode.prototype);
 
 exports.Mode = Mode;

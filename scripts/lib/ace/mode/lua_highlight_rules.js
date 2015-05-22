@@ -83,7 +83,7 @@ var LuaHighlightRules = function() {
         "constant.library": stdLibaries,
         "constant.language": builtinConstants,
         "invalid.illegal": futureReserved,
-        "variable.language": "this"
+        "variable.language": "self"
     }, "identifier");
 
     var decimalInteger = "(?:(?:[1-9]\\d*)|(?:0))";
@@ -99,7 +99,7 @@ var LuaHighlightRules = function() {
         "start" : [{
             stateName: "bracketedComment",
             onMatch : function(value, currentState, stack){
-                stack.unshift(this.next, value.length, currentState);
+                stack.unshift(this.next, value.length - 2, currentState);
                 return "comment";
             },
             regex : /\-\-\[=*\[/,
@@ -115,7 +115,7 @@ var LuaHighlightRules = function() {
                         }
                         return "comment";
                     },
-                    regex : /(?:[^\\]|\\.)*?\]=*\]/,
+                    regex : /\]=*\]/,
                     next  : "start"
                 }, {
                     defaultToken : "comment"
@@ -147,7 +147,7 @@ var LuaHighlightRules = function() {
                         return "comment";
                     },
                     
-                    regex : /(?:[^\\]|\\.)*?\]=*\]/,
+                    regex : /\]=*\]/,
                     next  : "start"
                 }, {
                     defaultToken : "comment"

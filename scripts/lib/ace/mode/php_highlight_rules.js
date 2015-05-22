@@ -969,13 +969,11 @@ var PhpLangHighlightRules = function() {
                     else if (value == "debugger")
                         return "invalid.deprecated";
                     else
-                        if(value.match(/^(\$[a-zA-Z][a-zA-Z0-9_]*|self|parent)$/))
+                        if(value.match(/^(\$[a-zA-Z_\x7f-\uffff][a-zA-Z0-9_\x7f-\uffff]*|self|parent)$/))
                             return "variable";
                         return "identifier";
                 },
-                // TODO: Unicode escape sequences
-                // TODO: Unicode identifiers
-                regex : "[a-zA-Z_$][a-zA-Z0-9_$]*\\b"
+                regex : /[a-zA-Z_$\x7f-\uffff][a-zA-Z0-9_\x7f-\uffff]*/
             }, {
                 onMatch : function(value, currentSate, state) {
                     value = value.substr(3);
@@ -988,7 +986,7 @@ var PhpLangHighlightRules = function() {
                 next: "heredoc"
             }, {
                 token : "keyword.operator",
-                regex : "::|!|\\$|%|&|\\*|\\-\\-|\\-|\\+\\+|\\+|~|===|==|=|!=|!==|<=|>=|<<=|>>=|>>>=|<>|<|>|!|&&|\\|\\||\\?\\:|\\*=|%=|\\+=|\\-=|&=|\\^=|\\b(?:in|instanceof|new|delete|typeof|void)"
+                regex : "::|!|\\$|%|&|\\*|\\-\\-|\\-|\\+\\+|\\+|~|===|==|!=|!==|<=|>=|=>|<<=|>>=|>>>=|<>|<|>|=|!|&&|\\|\\||\\?\\:|\\*=|%=|\\+=|\\-=|&=|\\^=|\\b(?:in|instanceof|new|delete|typeof|void)"
             }, {
                 token : "paren.lparen",
                 regex : "[[({]"
@@ -1003,27 +1001,26 @@ var PhpLangHighlightRules = function() {
         "heredoc" : [
             {
                 onMatch : function(value, currentSate, stack) {
-                    if (stack[1]  + ";" != value)
+                    if (stack[1] != value)
                         return "string";
                     stack.shift();
                     stack.shift();
-                    return "markup.list"
+                    return "markup.list";
                 },
-                regex : "^\\w+;$",
+                regex : "^\\w+(?=;?$)",
                 next: "start"
             }, {
                 token: "string",
-                regex : ".*",
+                regex : ".*"
             }
         ],
         "comment" : [
             {
-                token : "comment", // closing comment
-                regex : ".*?\\*\\/",
+                token : "comment",
+                regex : "\\*\\/",
                 next : "start"
             }, {
-                token : "comment", // comment spanning whole line
-                regex : ".+"
+                defaultToken : "comment"
             }
         ],
         "qqstring" : [
@@ -1031,10 +1028,10 @@ var PhpLangHighlightRules = function() {
                 token : "constant.language.escape",
                 regex : '\\\\(?:[nrtvef\\\\"$]|[0-7]{1,3}|x[0-9A-Fa-f]{1,2})'
             }, {
-                token : "constant.language.escape",
-                regex : /\$[\w]+(?:\[[\w\]+]|=>\w+)?/
+                token : "variable",
+                regex : /\$[\w]+(?:\[[\w\]+]|[=\-]>\w+)?/
             }, {
-                token : "constant.language.escape",
+                token : "variable",
                 regex : /\$\{[^"\}]+\}?/           // this is wrong but ok for now
             },
             {token : "string", regex : '"', next : "start"},
@@ -1057,21 +1054,27 @@ oop.inherits(PhpLangHighlightRules, TextHighlightRules);
 var PhpHighlightRules = function() {
     HtmlHighlightRules.call(this);
 
-    for (var i in this.$rules) {
-        this.$rules[i].unshift({
+    var startRules = [
+        {
             token : "support.php_tag", // php open tag
             regex : "<\\?(?:php|=)?",
             push  : "php-start"
-        });
-    }
+        }
+    ];
 
-    this.embedRules(PhpLangHighlightRules, "php-");
+    var endRules = [
+        {
+            token : "support.php_tag", // php close tag
+            regex : "\\?>",
+            next  : "pop"
+        }
+    ];
 
-    this.$rules["php-start"].unshift({
-        token : "support.php_tag", // php close tag
-        regex : "\\?>",
-        next  : "pop"
-    });
+    for (var key in this.$rules)
+        this.$rules[key].unshift.apply(this.$rules[key], startRules);
+
+    this.embedRules(PhpLangHighlightRules, "php-", endRules, ["start"]);
+
     this.normalizeRules();
 };
 

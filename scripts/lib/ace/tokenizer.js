@@ -31,11 +31,10 @@
 define(function(require, exports, module) {
 "use strict";
 
+var config = require("./config");
 // tokenizing lines longer than this makes editor very slow
-var MAX_TOKEN_COUNT = 1000;
+var MAX_TOKEN_COUNT = 2000;
 /**
- *
- *
  * This class takes a set of highlighting rules, and creates a tokenizer out of them. For more information, see [the wiki on extending highlighters](https://github.com/ajaxorg/ace/wiki/Creating-or-Extending-an-Edit-Mode#wiki-extendingTheHighlighter).
  * @class Tokenizer
  **/
@@ -58,6 +57,7 @@ var Tokenizer = function(rules) {
         var mapping = this.matchMappings[key] = {defaultToken: "text"};
         var flag = "g";
 
+        var splitterRurles = [];
         for (var i = 0; i < state.length; i++) {
             var rule = state[i];
             if (rule.defaultToken)
@@ -78,11 +78,14 @@ var Tokenizer = function(rules) {
                 if (rule.token.length == 1 || matchcount == 1) {
                     rule.token = rule.token[0];
                 } else if (matchcount - 1 != rule.token.length) {
-                    throw new Error("number of classes and regexp groups in '" + 
-                        rule.token + "'\n'" + rule.regex +  "' doesn't match\n"
-                        + (matchcount - 1) + "!=" + rule.token.length);
+                    this.reportError("number of classes and regexp groups doesn't match", { 
+                        rule: rule,
+                        groupCount: matchcount - 1
+                    });
+                    rule.token = rule.token[0];
                 } else {
                     rule.tokenArray = rule.token;
+                    rule.token = null;
                     rule.onMatch = this.$arrayTokens;
                 }
             } else if (typeof rule.token == "function" && !rule.onMatch) {
@@ -95,7 +98,7 @@ var Tokenizer = function(rules) {
             if (matchcount > 1) {
                 if (/\\\d/.test(rule.regex)) {
                     // Replace any backreferences and offset appropriately.
-                    adjustedregex = rule.regex.replace(/\\([0-9]+)/g, function (match, digit) {
+                    adjustedregex = rule.regex.replace(/\\([0-9]+)/g, function(match, digit) {
                         return "\\" + (parseInt(digit, 10) + matchTotal + 1);
                     });
                 } else {
@@ -103,7 +106,7 @@ var Tokenizer = function(rules) {
                     adjustedregex = this.removeCapturingGroups(rule.regex);
                 }
                 if (!rule.splitRegex && typeof rule.token != "string")
-                    rule.splitRegex = this.createSplitterRegexp(rule.regex, flag);
+                    splitterRurles.push(rule); // flag will be known only at the very end
             }
 
             mapping[matchTotal] = i;
@@ -114,14 +117,26 @@ var Tokenizer = function(rules) {
             // makes property access faster
             if (!rule.onMatch)
                 rule.onMatch = null;
-            rule.__proto__ = null;
         }
+        
+        if (!ruleRegExps.length) {
+            mapping[0] = 0;
+            ruleRegExps.push("$");
+        }
+        
+        splitterRurles.forEach(function(rule) {
+            rule.splitRegex = this.createSplitterRegexp(rule.regex, flag);
+        }, this);
 
         this.regExps[key] = new RegExp("(" + ruleRegExps.join(")|(") + ")|($)", flag);
     }
 };
 
 (function() {
+    this.$setMaxTokenCount = function(m) {
+        MAX_TOKEN_COUNT = m | 0;
+    };
+    
     this.$applyToken = function(str) {
         var values = this.splitRegex.exec(str).slice(1);
         var types = this.token.apply(this, values);
@@ -145,6 +160,8 @@ var Tokenizer = function(rules) {
         if (!str)
             return [];
         var values = this.splitRegex.exec(str);
+        if (!values)
+            return "text";
         var tokens = [];
         var types = this.tokenArray;
         for (var i = 0, l = types.length; i < l; i++) {
@@ -207,17 +224,26 @@ var Tokenizer = function(rules) {
         if (startState && typeof startState != "string") {
             var stack = startState.slice(0);
             startState = stack[0];
+            if (startState === "#tmp") {
+                stack.shift()
+                startState = stack.shift()
+            }
         } else
             var stack = [];
 
         var currentState = startState || "start";
         var state = this.states[currentState];
+        if (!state) {
+            currentState = "start";
+            state = this.states[currentState];
+        }
         var mapping = this.matchMappings[currentState];
         var re = this.regExps[currentState];
         re.lastIndex = 0;
 
         var match, tokens = [];
         var lastIndex = 0;
+        var matchAttempts = 0;
 
         var token = {type: null, value: ""};
 
@@ -250,14 +276,15 @@ var Tokenizer = function(rules) {
                     type = rule.token;
 
                 if (rule.next) {
-                    if (typeof rule.next == "string")
+                    if (typeof rule.next == "string") {
                         currentState = rule.next;
-                    else
+                    } else {
                         currentState = rule.next(currentState, stack);
-
+                    }
+                    
                     state = this.states[currentState];
                     if (!state) {
-                        window.console && console.error && console.error(currentState, "doesn't exist");
+                        this.reportError("state doesn't exist", currentState);
                         currentState = "start";
                         state = this.states[currentState];
                     }
@@ -270,7 +297,7 @@ var Tokenizer = function(rules) {
             }
 
             if (value) {
-                if (typeof type == "string") {
+                if (typeof type === "string") {
                     if ((!rule || rule.merge !== false) && token.type === type) {
                         token.value += value;
                     } else {
@@ -292,22 +319,43 @@ var Tokenizer = function(rules) {
 
             lastIndex = index;
 
-            if (tokens.length > MAX_TOKEN_COUNT) {
-                token.value += line.substr(lastIndex);
-                currentState = "start"
+            if (matchAttempts++ > MAX_TOKEN_COUNT) {
+                if (matchAttempts > 2 * line.length) {
+                    this.reportError("infinite loop with in ace tokenizer", {
+                        startState: startState,
+                        line: line
+                    });
+                }
+                // chrome doens't show contents of text nodes with very long text
+                while (lastIndex < line.length) {
+                    if (token.type)
+                        tokens.push(token);
+                    token = {
+                        value: line.substring(lastIndex, lastIndex += 2000),
+                        type: "overflow"
+                    };
+                }
+                currentState = "start";
+                stack = [];
                 break;
             }
         }
 
         if (token.type)
             tokens.push(token);
-
+        
+        if (stack.length > 1) {
+            if (stack[0] !== currentState)
+                stack.unshift("#tmp", currentState);
+        }
         return {
             tokens : tokens,
             state : stack.length ? stack : currentState
         };
     };
-
+    
+    this.reportError = config.reportError;
+    
 }).call(Tokenizer.prototype);
 
 exports.Tokenizer = Tokenizer;

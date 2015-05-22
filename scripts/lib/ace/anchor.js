@@ -36,7 +36,7 @@ var EventEmitter = require("./lib/event_emitter").EventEmitter;
 
 /**
  *
- * Defines the floating pointer in the document. Whenever text is inserted or deleted before the cursor, the position of the cursor is updated.
+ * Defines a floating pointer in the document. Whenever text is inserted or deleted before the cursor, the position of the anchor is updated.
  *
  * @class Anchor
  **/
@@ -52,15 +52,13 @@ var EventEmitter = require("./lib/event_emitter").EventEmitter;
  **/
 
 var Anchor = exports.Anchor = function(doc, row, column) {
-    this.document = doc;
-
+    this.$onChange = this.onChange.bind(this);
+    this.attach(doc);
+    
     if (typeof column == "undefined")
         this.setPosition(row.row, row.column);
     else
         this.setPosition(row, column);
-
-    this.$onChange = this.onChange.bind(this);
-    doc.on("change", this.$onChange);
 };
 
 (function() {
@@ -71,7 +69,6 @@ var Anchor = exports.Anchor = function(doc, row, column) {
      * Returns an object identifying the `row` and `column` position of the current anchor.
      * @returns {Object}
      **/
-
     this.getPosition = function() {
         return this.$clipPositionToDocument(this.row, this.column);
     };
@@ -81,11 +78,14 @@ var Anchor = exports.Anchor = function(doc, row, column) {
      * Returns the current document.
      * @returns {Document}
      **/
-
     this.getDocument = function() {
         return this.document;
     };
 
+    /**
+     * experimental: allows anchor to stick to the next on the left
+     */
+    this.$insertRight = false;
     /**
      * Fires whenever the anchor position changes.
      *
@@ -98,70 +98,55 @@ var Anchor = exports.Anchor = function(doc, row, column) {
      *  - `old`: An object describing the old Anchor position
      *  - `value`: An object describing the new Anchor position
      *
-     *
      **/
-
-    this.onChange = function(e) {
-        var delta = e.data;
-        var range = delta.range;
-
-        if (range.start.row == range.end.row && range.start.row != this.row)
+    this.onChange = function(delta) {
+        if (delta.start.row == delta.end.row && delta.start.row != this.row)
             return;
 
-        if (range.start.row > this.row)
+        if (delta.start.row > this.row)
             return;
-
-        if (range.start.row == this.row && range.start.column > this.column)
-            return;
-
-        var row = this.row;
-        var column = this.column;
-        var start = range.start;
-        var end = range.end;
-
-        if (delta.action === "insertText") {
-            if (start.row === row && start.column <= column) {
-                if (start.row === end.row) {
-                    column += end.column - start.column;
-                } else {
-                    column -= start.column;
-                    row += end.row - start.row;
-                }
-            } else if (start.row !== end.row && start.row < row) {
-                row += end.row - start.row;
-            }
-        } else if (delta.action === "insertLines") {
-            if (start.row <= row) {
-                row += end.row - start.row;
-            }
-        } else if (delta.action === "removeText") {
-            if (start.row === row && start.column < column) {
-                if (end.column >= column)
-                    column = start.column;
-                else
-                    column = Math.max(0, column - (end.column - start.column));
-
-            } else if (start.row !== end.row && start.row < row) {
-                if (end.row === row)
-                    column = Math.max(0, column - end.column) + start.column;
-                row -= (end.row - start.row);
-            } else if (end.row === row) {
-                row -= end.row - start.row;
-                column = Math.max(0, column - end.column) + start.column;
-            }
-        } else if (delta.action == "removeLines") {
-            if (start.row <= row) {
-                if (end.row <= row)
-                    row -= end.row - start.row;
-                else {
-                    row = start.row;
-                    column = 0;
-                }
-            }
-        }
-
-        this.setPosition(row, column, true);
+            
+        var point = $getTransformedPoint(delta, {row: this.row, column: this.column}, this.$insertRight);
+        this.setPosition(point.row, point.column, true);
     };
+    
+    function $pointsInOrder(point1, point2, equalPointsInOrder) {
+        var bColIsAfter = equalPointsInOrder ? point1.column <= point2.column : point1.column < point2.column;
+        return (point1.row < point2.row) || (point1.row == point2.row && bColIsAfter);
+    }
+            
+    function $getTransformedPoint(delta, point, moveIfEqual) {
+        // Get delta info.
+        var deltaIsInsert = delta.action == "insert";
+        var deltaRowShift = (deltaIsInsert ? 1 : -1) * (delta.end.row    - delta.start.row);
+        var deltaColShift = (deltaIsInsert ? 1 : -1) * (delta.end.column - delta.start.column);
+        var deltaStart = delta.start;
+        var deltaEnd = deltaIsInsert ? deltaStart : delta.end; // Collapse insert range.
+        
+        // DELTA AFTER POINT: No change needed.
+        if ($pointsInOrder(point, deltaStart, moveIfEqual)) {
+            return {
+                row: point.row,
+                column: point.column
+            };
+        }
+        
+        // DELTA BEFORE POINT: Move point by delta shift.
+        if ($pointsInOrder(deltaEnd, point, !moveIfEqual)) {
+            return {
+                row: point.row + deltaRowShift,
+                column: point.column + (point.row == deltaEnd.row ? deltaColShift : 0)
+            };
+        }
+        
+        // DELTA ENVELOPS POINT (delete only): Move point to delta start.
+        // TODO warn if delta.action != "remove" ?
+        
+        return {
+            row: deltaStart.row,
+            column: deltaStart.column
+        };
+    }
 
     /**
      * Sets the anchor position to the specified row and column. If `noClip` is `true`, the position is not clipped.
@@ -169,10 +154,7 @@ var Anchor = exports.Anchor = function(doc, row, column) {
      * @param {Number} column The column index to move the anchor to
      * @param {Boolean} noClip Identifies if you want the position to be clipped
      *
-     *
-     *
      **/
-
     this.setPosition = function(row, column, noClip) {
         var pos;
         if (noClip) {
@@ -194,19 +176,22 @@ var Anchor = exports.Anchor = function(doc, row, column) {
 
         this.row = pos.row;
         this.column = pos.column;
-        this._emit("change", {
+        this._signal("change", {
             old: old,
             value: pos
         });
     };
 
     /**
-     * When called, the `'change'` event listener is removed.
+     * When called, the `"change"` event listener is removed.
      *
      **/
-
     this.detach = function() {
         this.document.removeEventListener("change", this.$onChange);
+    };
+    this.attach = function(doc) {
+        this.document = doc || this.document;
+        this.document.on("change", this.$onChange);
     };
 
     /**

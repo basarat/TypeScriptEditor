@@ -46,10 +46,11 @@ var html = '<div class="ace_search right">\
         <input class="ace_search_field" placeholder="Search for" spellcheck="false"></input>\
         <button type="button" action="findNext" class="ace_searchbtn next"></button>\
         <button type="button" action="findPrev" class="ace_searchbtn prev"></button>\
+        <button type="button" action="findAll" class="ace_searchbtn" title="Alt-Enter">All</button>\
     </div>\
     <div class="ace_replace_form">\
         <input class="ace_search_field" placeholder="Replace with" spellcheck="false"></input>\
-        <button type="button" action="replace" class="ace_replacebtn">Replace</button>\
+        <button type="button" action="replaceAndFindNext" class="ace_replacebtn">Replace</button>\
         <button type="button" action="replaceAll" class="ace_replacebtn">All</button>\
     </div>\
     <div class="ace_search_options">\
@@ -75,9 +76,7 @@ var SearchBox = function(editor, range, showReplaceForm) {
         this.editor = editor;
     };
 
-    this.$init = function() {
-        var sb = this.element;
-
+    this.$initElements = function(sb) {
         this.searchBox = sb.querySelector(".ace_search_form");
         this.replaceBox = sb.querySelector(".ace_replace_form");
         this.searchOptions = sb.querySelector(".ace_search_options");
@@ -86,7 +85,13 @@ var SearchBox = function(editor, range, showReplaceForm) {
         this.wholeWordOption = sb.querySelector("[action=toggleWholeWords]");
         this.searchInput = this.searchBox.querySelector(".ace_search_field");
         this.replaceInput = this.replaceBox.querySelector(".ace_search_field");
-
+    };
+    
+    this.$init = function() {
+        var sb = this.element;
+        
+        this.$initElements(sb);
+        
         var _this = this;
         event.addListener(sb, "mousedown", function(e) {
             setTimeout(function(){
@@ -95,7 +100,7 @@ var SearchBox = function(editor, range, showReplaceForm) {
             event.stopPropagation(e);
         });
         event.addListener(sb, "click", function(e) {
-            var t = e.target;
+            var t = e.target || e.srcElement;
             var action = t.getAttribute("action");
             if (action && _this[action])
                 _this[action]();
@@ -122,9 +127,11 @@ var SearchBox = function(editor, range, showReplaceForm) {
         });
         event.addListener(this.searchInput, "focus", function() {
             _this.activeInput = _this.searchInput;
+            _this.searchInput.value && _this.highlight();
         });
         event.addListener(this.replaceInput, "focus", function() {
             _this.activeInput = _this.replaceInput;
+            _this.searchInput.value && _this.highlight();
         });
     };
 
@@ -164,6 +171,11 @@ var SearchBox = function(editor, range, showReplaceForm) {
                 sb.replace();
             sb.findPrev();
         },
+        "Alt-Return": function(sb) {
+            if (sb.activeInput == sb.replaceInput)
+                sb.replaceAll();
+            sb.findAll();
+        },
         "Tab": function(sb) {
             (sb.activeInput == sb.replaceInput ? sb.searchInput : sb.replaceInput).focus();
         }
@@ -199,6 +211,10 @@ var SearchBox = function(editor, range, showReplaceForm) {
         this.find(false, false);
     };
 
+    this.highlight = function(re) {
+        this.editor.session.highlight(re || this.editor.$search.$options.re);
+        this.editor.renderer.updateBackMarkers()
+    };
     this.find = function(skipCurrent, backwards) {
         var range = this.editor.find(this.searchInput.value, {
             skipCurrent: skipCurrent,
@@ -208,8 +224,10 @@ var SearchBox = function(editor, range, showReplaceForm) {
             caseSensitive: this.caseSensitiveOption.checked,
             wholeWord: this.wholeWordOption.checked
         });
-        dom.setCssClass(this.searchBox, "ace_nomatch", !range && this.searchInput.value);
-        this.editor.session.highlight(this.editor.$search.$options.re);
+        var noMatch = !range && this.searchInput.value;
+        dom.setCssClass(this.searchBox, "ace_nomatch", noMatch);
+        this.editor._emit("findSearchBox", { match: !noMatch });
+        this.highlight();
     };
     this.findNext = function() {
         this.find(true, false);
@@ -217,11 +235,31 @@ var SearchBox = function(editor, range, showReplaceForm) {
     this.findPrev = function() {
         this.find(true, true);
     };
+    this.findAll = function(){
+        var range = this.editor.findAll(this.searchInput.value, {            
+            regExp: this.regExpOption.checked,
+            caseSensitive: this.caseSensitiveOption.checked,
+            wholeWord: this.wholeWordOption.checked
+        });
+        var noMatch = !range && this.searchInput.value;
+        dom.setCssClass(this.searchBox, "ace_nomatch", noMatch);
+        this.editor._emit("findSearchBox", { match: !noMatch });
+        this.highlight();
+        this.hide();
+    };
     this.replace = function() {
-        this.editor.replace(this.replaceInput.value);
+        if (!this.editor.getReadOnly())
+            this.editor.replace(this.replaceInput.value);
+    };    
+    this.replaceAndFindNext = function() {
+        if (!this.editor.getReadOnly()) {
+            this.editor.replace(this.replaceInput.value);
+            this.findNext()
+        }
     };
     this.replaceAll = function() {
-        this.editor.replaceAll(this.replaceInput.value);
+        if (!this.editor.getReadOnly())
+            this.editor.replaceAll(this.replaceInput.value);
     };
 
     this.hide = function() {
@@ -243,6 +281,10 @@ var SearchBox = function(editor, range, showReplaceForm) {
         this.editor.keyBinding.addKeyboardHandler(this.$closeSearchBarKb);
     };
 
+    this.isFocused = function() {
+        var el = document.activeElement;
+        return el == this.searchInput || el == this.replaceInput;
+    }
 }).call(SearchBox.prototype);
 
 exports.SearchBox = SearchBox;
@@ -251,47 +293,6 @@ exports.Search = function(editor, isReplace) {
     var sb = editor.searchBox || new SearchBox(editor);
     sb.show(editor.session.getTextRange(), isReplace);
 };
-
-
-exports.ISearch = function(session, options) {
-    this.$changeListener = this.$changeListener.bind(this);
-    this.startRange = session.selection.toOrientedRange();
-    this.options = options || {};
-};
-
-(function(){
-    this.setSession = function(session) {
-        if (this.session) {
-            this.session.removeListener(this.$changeListener);
-        }
-        this.session = session;
-        this.session.addListener(this.$changeListener);
-    };
-    this.setSearchString = function() {
-
-    };
-    this.getValue = function() {
-        if (this.value == null)
-            this.value = this.session.getValue();
-        return this.value;
-    };
-    this.$changeListener = function() {
-        this.value = null;
-    };
-    this.find = function() {
-
-    };
-    this.$edgeBefore = function() {
-        this.cursor = this.startRange[this.options.backwards ? "start" : "end"];
-    };
-    this.$edgeAfter = function() {
-
-    };
-    this.next = function(dir) {
-
-    };
-}).call(exports.ISearch.prototype);
-
 
 });
 

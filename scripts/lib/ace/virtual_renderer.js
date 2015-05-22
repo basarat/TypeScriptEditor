@@ -33,22 +33,24 @@ define(function(require, exports, module) {
 
 var oop = require("./lib/oop");
 var dom = require("./lib/dom");
-var event = require("./lib/event");
-var useragent = require("./lib/useragent");
 var config = require("./config");
+var useragent = require("./lib/useragent");
 var GutterLayer = require("./layer/gutter").Gutter;
 var MarkerLayer = require("./layer/marker").Marker;
 var TextLayer = require("./layer/text").Text;
 var CursorLayer = require("./layer/cursor").Cursor;
-var ScrollBar = require("./scrollbar").ScrollBar;
+var HScrollBar = require("./scrollbar").HScrollBar;
+var VScrollBar = require("./scrollbar").VScrollBar;
 var RenderLoop = require("./renderloop").RenderLoop;
+var FontMetrics = require("./layer/font_metrics").FontMetrics;
 var EventEmitter = require("./lib/event_emitter").EventEmitter;
 var editorCss = require("./requirejs/text!./css/editor.css");
 
-dom.importCssString(editorCss, "ace_editor");
+dom.importCssString(editorCss, "ace_editor.css");
 
 /**
  * The class that is responsible for drawing everything you see on the screen!
+ * @related editor.renderer 
  * @class VirtualRenderer
  **/
 
@@ -70,7 +72,7 @@ var VirtualRenderer = function(container, theme) {
     // dom.importCssString(editorCss, "ace_editor", container.ownerDocument);
 
     // in IE <= 9 the native cursor always shines through
-    this.$keepTextAreaAtCursor = !useragent.isIE;
+    this.$keepTextAreaAtCursor = !useragent.isOldIE;
 
     dom.addCssClass(this.container, "ace_editor");
 
@@ -102,37 +104,42 @@ var VirtualRenderer = function(container, theme) {
 
     // Indicates whether the horizontal scrollbar is visible
     this.$horizScroll = false;
+    this.$vScroll = false;
 
-    this.scrollBar = new ScrollBar(this.container);
-    this.scrollBar.addEventListener("scroll", function(e) {
-        if (!_self.$inScrollAnimation)
-            _self.session.setScrollTop(e.data);
+    this.scrollBar = 
+    this.scrollBarV = new VScrollBar(this.container, this);
+    this.scrollBarH = new HScrollBar(this.container, this);
+    this.scrollBarV.addEventListener("scroll", function(e) {
+        if (!_self.$scrollAnimation)
+            _self.session.setScrollTop(e.data - _self.scrollMargin.top);
+    });
+    this.scrollBarH.addEventListener("scroll", function(e) {
+        if (!_self.$scrollAnimation)
+            _self.session.setScrollLeft(e.data - _self.scrollMargin.left);
     });
 
     this.scrollTop = 0;
     this.scrollLeft = 0;
-
-    event.addListener(this.scroller, "scroll", function() {
-        var scrollLeft = _self.scroller.scrollLeft;
-        _self.scrollLeft = scrollLeft;
-        _self.session.setScrollLeft(scrollLeft);
-    });
 
     this.cursorPos = {
         row : 0,
         column : 0
     };
 
-    this.$textLayer.addEventListener("changeCharacterSize", function() {
+    this.$fontMetrics = new FontMetrics(this.container, 500);
+    this.$textLayer.$setFontMetrics(this.$fontMetrics);
+    this.$textLayer.addEventListener("changeCharacterSize", function(e) {
         _self.updateCharacterSize();
-        _self.onResize(true);
+        _self.onResize(true, _self.gutterWidth, _self.$size.width, _self.$size.height);
+        _self._signal("changeCharacterSize", e);
     });
 
     this.$size = {
         width: 0,
         height: 0,
         scrollerHeight: 0,
-        scrollerWidth: 0
+        scrollerWidth: 0,
+        $dirty: true
     };
 
     this.layerConfig = {
@@ -141,12 +148,22 @@ var VirtualRenderer = function(container, theme) {
         firstRow : 0,
         firstRowScreen: 0,
         lastRow : 0,
-        lineHeight : 1,
-        characterWidth : 1,
+        lineHeight : 0,
+        characterWidth : 0,
         minHeight : 1,
         maxHeight : 1,
         offset : 0,
-        height : 1
+        height : 1,
+        gutterOffset: 1
+    };
+    
+    this.scrollMargin = {
+        left: 0,
+        right: 0,
+        top: 0,
+        bottom: 0,
+        v: 0,
+        h: 0
     };
 
     this.$loop = new RenderLoop(
@@ -175,6 +192,22 @@ var VirtualRenderer = function(container, theme) {
     this.CHANGE_FULL = 512;
     this.CHANGE_H_SCROLL = 1024;
 
+    // this.$logChanges = function(changes) {
+    //     var a = ""
+    //     if (changes & this.CHANGE_CURSOR) a += " cursor";
+    //     if (changes & this.CHANGE_MARKER) a += " marker";
+    //     if (changes & this.CHANGE_GUTTER) a += " gutter";
+    //     if (changes & this.CHANGE_SCROLL) a += " scroll";
+    //     if (changes & this.CHANGE_LINES) a += " lines";
+    //     if (changes & this.CHANGE_TEXT) a += " text";
+    //     if (changes & this.CHANGE_SIZE) a += " size";
+    //     if (changes & this.CHANGE_MARKER_BACK) a += " marker_back";
+    //     if (changes & this.CHANGE_MARKER_FRONT) a += " marker_front";
+    //     if (changes & this.CHANGE_FULL) a += " full";
+    //     if (changes & this.CHANGE_H_SCROLL) a += " h_scroll";
+    //     console.log(a.trim())
+    // };
+
     oop.implement(this, EventEmitter);
 
     this.updateCharacterSize = function() {
@@ -183,7 +216,9 @@ var VirtualRenderer = function(container, theme) {
             this.setStyle("ace_nobold", !this.$allowBoldFonts);
         }
 
+        this.layerConfig.characterWidth =
         this.characterWidth = this.$textLayer.getCharacterWidth();
+        this.layerConfig.lineHeight =
         this.lineHeight = this.$textLayer.getLineHeight();
         this.$updatePrintMargin();
     };
@@ -193,17 +228,27 @@ var VirtualRenderer = function(container, theme) {
     * Associates the renderer with an [[EditSession `EditSession`]].
     **/
     this.setSession = function(session) {
+        if (this.session)
+            this.session.doc.off("changeNewLineMode", this.onChangeNewLineMode);
+            
         this.session = session;
-
-        this.scroller.className = "ace_scroller";
+        if (session && this.scrollMargin.top && session.getScrollTop() <= 0)
+            session.setScrollTop(-this.scrollMargin.top);
 
         this.$cursorLayer.setSession(session);
         this.$markerBack.setSession(session);
         this.$markerFront.setSession(session);
         this.$gutterLayer.setSession(session);
         this.$textLayer.setSession(session);
+        if (!session)
+            return;
+        
         this.$loop.schedule(this.CHANGE_FULL);
-
+        this.session.$setFontMetrics(this.$fontMetrics);
+        
+        this.onChangeNewLineMode = this.onChangeNewLineMode.bind(this);
+        this.onChangeNewLineMode()
+        this.session.doc.on("changeNewLineMode", this.onChangeNewLineMode);
     };
 
     /**
@@ -213,7 +258,7 @@ var VirtualRenderer = function(container, theme) {
     *
     *
     **/
-    this.updateLines = function(firstRow, lastRow) {
+    this.updateLines = function(firstRow, lastRow, force) {
         if (lastRow === undefined)
             lastRow = Infinity;
 
@@ -231,12 +276,26 @@ var VirtualRenderer = function(container, theme) {
                 this.$changedLines.lastRow = lastRow;
         }
 
-        if (this.$changedLines.firstRow > this.layerConfig.lastRow ||
-            this.$changedLines.lastRow < this.layerConfig.firstRow)
+        // If the change happened offscreen above us then it's possible
+        // that a new line wrap will affect the position of the lines on our
+        // screen so they need redrawn.
+        // TODO: better solution is to not change scroll position when text is changed outside of visible area
+        if (this.$changedLines.lastRow < this.layerConfig.firstRow) {
+            if (force)
+                this.$changedLines.lastRow = this.layerConfig.lastRow;
+            else
+                return;
+        }
+        if (this.$changedLines.firstRow > this.layerConfig.lastRow)
             return;
         this.$loop.schedule(this.CHANGE_LINES);
     };
 
+    this.onChangeNewLineMode = function() {
+        this.$loop.schedule(this.CHANGE_TEXT);
+        this.$textLayer.$updateEolChar();
+    };
+    
     this.onChangeTabSize = function() {
         this.$loop.schedule(this.CHANGE_TEXT | this.CHANGE_MARKER);
         this.$textLayer.onChangeTabSize();
@@ -270,6 +329,13 @@ var VirtualRenderer = function(container, theme) {
         this.$textLayer.checkForSizeChanges();
     };
 
+    this.$changes = 0;
+    this.$updateSizeAsync = function() {
+        if (this.$loop.pending)
+            this.$size.$dirty = true;
+        else
+            this.onResize();
+    };
     /**
     * [Triggers a resize of the editor.]{: #VirtualRenderer.onResize}
     * @param {Boolean} force If `true`, recomputes the size, even if the height and width haven't changed
@@ -280,75 +346,108 @@ var VirtualRenderer = function(container, theme) {
     *
     **/
     this.onResize = function(force, gutterWidth, width, height) {
-        var changes = 0;
-        var size = this.$size;
-
         if (this.resizing > 2)
             return;
-        else if (this.resizing > 1)
+        else if (this.resizing > 0)
             this.resizing++;
         else
             this.resizing = force ? 1 : 0;
+        // `|| el.scrollHeight` is required for outosizing editors on ie
+        // where elements with clientHeight = 0 alsoe have clientWidth = 0
+        var el = this.container;
         if (!height)
-            height = dom.getInnerHeight(this.container);
-
-        if (height && (force || size.height != height)) {
-            size.height = height;
-            changes = this.CHANGE_SIZE;
-
-            size.scrollerHeight = this.scroller.clientHeight;
-            if (!size.scrollerHeight) {
-                size.scrollerHeight = size.height;
-                if (this.$horizScroll)
-                    size.scrollerHeight -= this.scrollBar.getWidth();
-            }
-            this.scrollBar.setHeight(size.scrollerHeight);
-
-            if (this.session) {
-                this.session.setScrollTop(this.getScrollTop());
-                changes = changes | this.CHANGE_FULL;
-            }
-        }
-
+            height = el.clientHeight || el.scrollHeight;
         if (!width)
-            width = dom.getInnerWidth(this.container);
+            width = el.clientWidth || el.scrollWidth;
+        var changes = this.$updateCachedSize(force, gutterWidth, width, height);
 
-        if (width && (force || this.resizing > 1 || size.width != width)) {
-            changes = this.CHANGE_SIZE;
-            size.width = width;
-
-            var gutterWidth = this.$showGutter ? this.$gutter.offsetWidth : 0;
-            this.scroller.style.left = gutterWidth + "px";
-            size.scrollerWidth = Math.max(0, width - gutterWidth - this.scrollBar.getWidth());
-            this.scroller.style.right = this.scrollBar.getWidth() + "px";
-
-            if (this.session.getUseWrapMode() && this.adjustWrapLimit() || force)
-                changes = changes | this.CHANGE_FULL;
-        }
-
-        if (!this.$size.scrollerHeight)
-            return;
-
-        if (force)
-            this.$renderChanges(changes, true);
-        else
-            this.$loop.schedule(changes);
+        
+        if (!this.$size.scrollerHeight || (!width && !height))
+            return this.resizing = 0;
 
         if (force)
             this.$gutterLayer.$padding = null;
 
         if (force)
-            delete this.resizing;
+            this.$renderChanges(changes | this.$changes, true);
+        else
+            this.$loop.schedule(changes | this.$changes);
+
+        if (this.resizing)
+            this.resizing = 0;
+        // reset cached values on scrollbars, needs to be removed when switching to non-native scrollbars
+        // see https://github.com/ajaxorg/ace/issues/2195
+        this.scrollBarV.scrollLeft = this.scrollBarV.scrollTop = null;
+    };
+    
+    this.$updateCachedSize = function(force, gutterWidth, width, height) {
+        height -= (this.$extraHeight || 0);
+        var changes = 0;
+        var size = this.$size;
+        var oldSize = {
+            width: size.width,
+            height: size.height,
+            scrollerHeight: size.scrollerHeight,
+            scrollerWidth: size.scrollerWidth
+        };
+        if (height && (force || size.height != height)) {
+            size.height = height;
+            changes |= this.CHANGE_SIZE;
+
+            size.scrollerHeight = size.height;
+            if (this.$horizScroll)
+                size.scrollerHeight -= this.scrollBarH.getHeight();
+                
+            // this.scrollBarV.setHeight(size.scrollerHeight);
+            this.scrollBarV.element.style.bottom = this.scrollBarH.getHeight() + "px";
+
+            changes = changes | this.CHANGE_SCROLL;
+        }
+
+        if (width && (force || size.width != width)) {
+            changes |= this.CHANGE_SIZE;
+            size.width = width;
+            
+            if (gutterWidth == null)
+                gutterWidth = this.$showGutter ? this.$gutter.offsetWidth : 0;
+            
+            this.gutterWidth = gutterWidth;
+            
+            this.scrollBarH.element.style.left = 
+            this.scroller.style.left = gutterWidth + "px";
+            size.scrollerWidth = Math.max(0, width - gutterWidth - this.scrollBarV.getWidth());           
+            
+            this.scrollBarH.element.style.right = 
+            this.scroller.style.right = this.scrollBarV.getWidth() + "px";
+            this.scroller.style.bottom = this.scrollBarH.getHeight() + "px";
+                
+            // this.scrollBarH.element.style.setWidth(size.scrollerWidth);
+
+            if (this.session && this.session.getUseWrapMode() && this.adjustWrapLimit() || force)
+                changes |= this.CHANGE_FULL;
+        }
+        
+        size.$dirty = !width || !height;
+
+        if (changes)
+            this._signal("resize", oldSize);
+
+        return changes;
     };
 
     this.onGutterResize = function() {
-        var width = this.$size.width;
         var gutterWidth = this.$showGutter ? this.$gutter.offsetWidth : 0;
-        this.scroller.style.left = gutterWidth + "px";
-        this.$size.scrollerWidth = Math.max(0, width - gutterWidth - this.scrollBar.getWidth());
+        if (gutterWidth != this.gutterWidth)
+            this.$changes |= this.$updateCachedSize(true, gutterWidth, this.$size.width, this.$size.height);
 
-        if (this.session.getUseWrapMode() && this.adjustWrapLimit())
+        if (this.session.getUseWrapMode() && this.adjustWrapLimit()) {
             this.$loop.schedule(this.CHANGE_FULL);
+        } else if (this.$size.$dirty) {
+            this.$loop.schedule(this.CHANGE_FULL);
+        } else {
+            this.$computeLayerConfig();
+            this.$loop.schedule(this.CHANGE_MARKER);
+        }
     };
 
     /**
@@ -516,7 +615,7 @@ var VirtualRenderer = function(container, theme) {
     * @returns {DOMElement}
     **/
     this.getMouseEventTarget = function() {
-        return this.content;
+        return this.scroller;
     };
 
     /**
@@ -538,27 +637,28 @@ var VirtualRenderer = function(container, theme) {
         var posLeft = this.$cursorLayer.$pixelPos.left;
         posTop -= config.offset;
 
+        var style = this.textarea.style;
         var h = this.lineHeight;
-        if (posTop < 0 || posTop > config.height - h)
+        if (posTop < 0 || posTop > config.height - h) {
+            style.top = style.left = "0";
             return;
+        }
 
         var w = this.characterWidth;
         if (this.$composition) {
             var val = this.textarea.value.replace(/^\x01+/, "");
-            w *= this.session.$getStringScreenWidth(val)[0];
+            w *= (this.session.$getStringScreenWidth(val)[0]+2);
             h += 2;
-            posTop -= 1;
         }
         posLeft -= this.scrollLeft;
         if (posLeft > this.$size.scrollerWidth - w)
             posLeft = this.$size.scrollerWidth - w;
 
-        posLeft -= this.scrollBar.width;
-
-        this.textarea.style.height = h + "px";
-        this.textarea.style.width = w + "px";
-        this.textarea.style.right = Math.max(0, this.$size.scrollerWidth - posLeft - w) + "px";
-        this.textarea.style.bottom = Math.max(0, this.$size.height - posTop - h) + "px";
+        posLeft += this.gutterWidth;
+        style.height = h + "px";
+        style.width = w + "px";
+        style.left = Math.min(posLeft, this.$size.scrollerWidth - w) + "px";
+        style.top = Math.min(posTop, this.$size.height - h) + "px";
     };
 
     /**
@@ -616,68 +716,146 @@ var VirtualRenderer = function(container, theme) {
         this.$loop.schedule(this.CHANGE_FULL);
         this.$updatePrintMargin();
     };
+    
+    this.setScrollMargin = function(top, bottom, left, right) {
+        var sm = this.scrollMargin;
+        sm.top = top|0;
+        sm.bottom = bottom|0;
+        sm.right = right|0;
+        sm.left = left|0;
+        sm.v = sm.top + sm.bottom;
+        sm.h = sm.left + sm.right;
+        if (sm.top && this.scrollTop <= 0 && this.session)
+            this.session.setScrollTop(-sm.top);
+        this.updateFull();
+    };
 
     /**
-    *
-    * Returns whether the horizontal scrollbar is set to be always visible.
-    * @returns {Boolean}
-    **/
+     * Returns whether the horizontal scrollbar is set to be always visible.
+     * @returns {Boolean}
+     **/
     this.getHScrollBarAlwaysVisible = function() {
         return this.$hScrollBarAlwaysVisible;
     };
 
     /**
-    * Identifies whether you want to show the horizontal scrollbar or not.
-    * @param {Boolean} alwaysVisible Set to `true` to make the horizontal scroll bar visible
-    *
-    *
-    **/
+     * Identifies whether you want to show the horizontal scrollbar or not.
+     * @param {Boolean} alwaysVisible Set to `true` to make the horizontal scroll bar visible
+     **/
     this.setHScrollBarAlwaysVisible = function(alwaysVisible) {
         this.setOption("hScrollBarAlwaysVisible", alwaysVisible);
     };
+    /**
+     * Returns whether the horizontal scrollbar is set to be always visible.
+     * @returns {Boolean}
+     **/
+    this.getVScrollBarAlwaysVisible = function() {
+        return this.$vScrollBarAlwaysVisible;
+    };
 
-    this.$updateScrollBar = function() {
-        this.scrollBar.setInnerHeight(this.layerConfig.maxHeight);
-        this.scrollBar.setScrollTop(this.scrollTop);
+    /**
+     * Identifies whether you want to show the horizontal scrollbar or not.
+     * @param {Boolean} alwaysVisible Set to `true` to make the horizontal scroll bar visible
+     **/
+    this.setVScrollBarAlwaysVisible = function(alwaysVisible) {
+        this.setOption("vScrollBarAlwaysVisible", alwaysVisible);
+    };
+
+    this.$updateScrollBarV = function() {
+        var scrollHeight = this.layerConfig.maxHeight;
+        var scrollerHeight = this.$size.scrollerHeight;
+        if (!this.$maxLines && this.$scrollPastEnd) {
+            scrollHeight -= (scrollerHeight - this.lineHeight) * this.$scrollPastEnd;
+            if (this.scrollTop > scrollHeight - scrollerHeight) {
+                scrollHeight = this.scrollTop + scrollerHeight;
+                this.scrollBarV.scrollTop = null;
+            }
+        }
+        this.scrollBarV.setScrollHeight(scrollHeight + this.scrollMargin.v);
+        this.scrollBarV.setScrollTop(this.scrollTop + this.scrollMargin.top);
+    };
+    this.$updateScrollBarH = function() {
+        this.scrollBarH.setScrollWidth(this.layerConfig.width + 2 * this.$padding + this.scrollMargin.h);
+        this.scrollBarH.setScrollLeft(this.scrollLeft + this.scrollMargin.left);
+    };
+    
+    this.$frozen = false;
+    this.freeze = function() {
+        this.$frozen = true;
+    };
+    
+    this.unfreeze = function() {
+        this.$frozen = false;
     };
 
     this.$renderChanges = function(changes, force) {
-        if (!force && (!changes || !this.session || !this.container.offsetWidth))
-            return;
-
+        if (this.$changes) {
+            changes |= this.$changes;
+            this.$changes = 0;
+        }
+        if ((!this.session || !this.container.offsetWidth || this.$frozen) || (!changes && !force)) {
+            this.$changes |= changes;
+            return; 
+        } 
+        if (this.$size.$dirty) {
+            this.$changes |= changes;
+            return this.onResize(true);
+        }
+        if (!this.lineHeight) {
+            this.$textLayer.checkForSizeChanges();
+        }
+        // this.$logChanges(changes);
+        
         this._signal("beforeRender");
+        var config = this.layerConfig;
         // text, scrolling and resize changes can cause the view port size to change
         if (changes & this.CHANGE_FULL ||
             changes & this.CHANGE_SIZE ||
             changes & this.CHANGE_TEXT ||
             changes & this.CHANGE_LINES ||
-            changes & this.CHANGE_SCROLL
-        )
-            this.$computeLayerConfig();
-
+            changes & this.CHANGE_SCROLL ||
+            changes & this.CHANGE_H_SCROLL
+        ) {
+            changes |= this.$computeLayerConfig();
+            // If a change is made offscreen and wrapMode is on, then the onscreen
+            // lines may have been pushed down. If so, the first screen row will not
+            // have changed, but the first actual row will. In that case, adjust 
+            // scrollTop so that the cursor and onscreen content stays in the same place.
+            // TODO: find a better way to handle this, that works non wrapped case and doesn't compute layerConfig twice
+            if (config.firstRow != this.layerConfig.firstRow && config.firstRowScreen == this.layerConfig.firstRowScreen) {
+                var st = this.scrollTop + (config.firstRow - this.layerConfig.firstRow) * this.lineHeight;
+                if (st > 0) {
+                    // this check is needed as a workaround for the documentToScreenRow returning -1 if document.length == 0
+                    this.scrollTop = st;
+                    changes = changes | this.CHANGE_SCROLL;
+                    changes |= this.$computeLayerConfig();
+                }
+            }
+            config = this.layerConfig;
+            // update scrollbar first to not lose scroll position when gutter calls resize
+            this.$updateScrollBarV();
+            if (changes & this.CHANGE_H_SCROLL)
+                this.$updateScrollBarH();
+            this.$gutterLayer.element.style.marginTop = (-config.offset) + "px";
+            this.content.style.marginTop = (-config.offset) + "px";
+            this.content.style.width = config.width + 2 * this.$padding + "px";
+            this.content.style.height = config.minHeight + "px";
+        }
+        
         // horizontal scrolling
         if (changes & this.CHANGE_H_SCROLL) {
-            this.scroller.scrollLeft = this.scrollLeft;
-
-            // read the value after writing it since the value might get clipped
-            var scrollLeft = this.scroller.scrollLeft;
-            this.scrollLeft = scrollLeft;
-            this.session.setScrollLeft(scrollLeft);
-
-            this.scroller.className = this.scrollLeft == 0 ? "ace_scroller" : "ace_scroller ace_scroll-left";
+            this.content.style.marginLeft = -this.scrollLeft + "px";
+            this.scroller.className = this.scrollLeft <= 0 ? "ace_scroller" : "ace_scroller ace_scroll-left";
         }
 
         // full
         if (changes & this.CHANGE_FULL) {
-            this.$textLayer.checkForSizeChanges();
-            // update scrollbar first to not lose scroll position when gutter calls resize
-            this.$updateScrollBar();
-            this.$textLayer.update(this.layerConfig);
+            this.$textLayer.update(config);
             if (this.$showGutter)
-                this.$gutterLayer.update(this.layerConfig);
-            this.$markerBack.update(this.layerConfig);
-            this.$markerFront.update(this.layerConfig);
-            this.$cursorLayer.update(this.layerConfig);
+                this.$gutterLayer.update(config);
+            this.$markerBack.update(config);
+            this.$markerFront.update(config);
+            this.$cursorLayer.update(config);
             this.$moveTextAreaToCursor();
             this.$highlightGutterLine && this.$updateGutterLineHighlight();
             this._signal("afterRender");
@@ -687,79 +865,125 @@ var VirtualRenderer = function(container, theme) {
         // scrolling
         if (changes & this.CHANGE_SCROLL) {
             if (changes & this.CHANGE_TEXT || changes & this.CHANGE_LINES)
-                this.$textLayer.update(this.layerConfig);
+                this.$textLayer.update(config);
             else
-                this.$textLayer.scrollLines(this.layerConfig);
+                this.$textLayer.scrollLines(config);
 
             if (this.$showGutter)
-                this.$gutterLayer.update(this.layerConfig);
-            this.$markerBack.update(this.layerConfig);
-            this.$markerFront.update(this.layerConfig);
-            this.$cursorLayer.update(this.layerConfig);
+                this.$gutterLayer.update(config);
+            this.$markerBack.update(config);
+            this.$markerFront.update(config);
+            this.$cursorLayer.update(config);
             this.$highlightGutterLine && this.$updateGutterLineHighlight();
             this.$moveTextAreaToCursor();
-            this.$updateScrollBar();
             this._signal("afterRender");
             return;
         }
 
         if (changes & this.CHANGE_TEXT) {
-            this.$textLayer.update(this.layerConfig);
+            this.$textLayer.update(config);
             if (this.$showGutter)
-                this.$gutterLayer.update(this.layerConfig);
+                this.$gutterLayer.update(config);
         }
         else if (changes & this.CHANGE_LINES) {
             if (this.$updateLines() || (changes & this.CHANGE_GUTTER) && this.$showGutter)
-                this.$gutterLayer.update(this.layerConfig);
+                this.$gutterLayer.update(config);
         }
         else if (changes & this.CHANGE_TEXT || changes & this.CHANGE_GUTTER) {
             if (this.$showGutter)
-                this.$gutterLayer.update(this.layerConfig);
+                this.$gutterLayer.update(config);
         }
 
         if (changes & this.CHANGE_CURSOR) {
-            this.$cursorLayer.update(this.layerConfig);
+            this.$cursorLayer.update(config);
             this.$moveTextAreaToCursor();
             this.$highlightGutterLine && this.$updateGutterLineHighlight();
         }
 
         if (changes & (this.CHANGE_MARKER | this.CHANGE_MARKER_FRONT)) {
-            this.$markerFront.update(this.layerConfig);
+            this.$markerFront.update(config);
         }
 
         if (changes & (this.CHANGE_MARKER | this.CHANGE_MARKER_BACK)) {
-            this.$markerBack.update(this.layerConfig);
+            this.$markerBack.update(config);
         }
-
-        if (changes & this.CHANGE_SIZE)
-            this.$updateScrollBar();
 
         this._signal("afterRender");
     };
 
+    
+    this.$autosize = function() {
+        var height = this.session.getScreenLength() * this.lineHeight;
+        var maxHeight = this.$maxLines * this.lineHeight;
+        var desiredHeight = Math.max(
+            (this.$minLines||1) * this.lineHeight,
+            Math.min(maxHeight, height)
+        ) + this.scrollMargin.v + (this.$extraHeight || 0);
+        if (this.$horizScroll)
+            desiredHeight += this.scrollBarH.getHeight();
+        var vScroll = height > maxHeight;
+        
+        if (desiredHeight != this.desiredHeight ||
+            this.$size.height != this.desiredHeight || vScroll != this.$vScroll) {
+            if (vScroll != this.$vScroll) {
+                this.$vScroll = vScroll;
+                this.scrollBarV.setVisible(vScroll);
+            }
+            
+            var w = this.container.clientWidth;
+            this.container.style.height = desiredHeight + "px";
+            this.$updateCachedSize(true, this.$gutterWidth, w, desiredHeight);
+            // this.$loop.changes = 0;
+            this.desiredHeight = desiredHeight;
+            
+            this._signal("autosize");
+        }
+    };
+    
     this.$computeLayerConfig = function() {
-        if (!this.$size.scrollerHeight)
-            return this.onResize(true);
-
         var session = this.session;
-
-        var offset = this.scrollTop % this.lineHeight;
-        var minHeight = this.$size.scrollerHeight + this.lineHeight;
+        var size = this.$size;
+        
+        var hideScrollbars = size.height <= 2 * this.lineHeight;
+        var screenLines = this.session.getScreenLength();
+        var maxHeight = screenLines * this.lineHeight;
 
         var longestLine = this.$getLongestLine();
+        
+        var horizScroll = !hideScrollbars && (this.$hScrollBarAlwaysVisible ||
+            size.scrollerWidth - longestLine - 2 * this.$padding < 0);
 
-        var horizScroll = this.$hScrollBarAlwaysVisible || this.$size.scrollerWidth - longestLine < 0;
-        var horizScrollChanged = this.$horizScroll !== horizScroll;
-        this.$horizScroll = horizScroll;
-        if (horizScrollChanged) {
-            this.scroller.style.overflowX = horizScroll ? "scroll" : "hidden";
-            // when we hide scrollbar scroll event isn't emited
-            // leaving session with wrong scrollLeft value
-            if (!horizScroll)
-                this.session.setScrollLeft(0);
+        var hScrollChanged = this.$horizScroll !== horizScroll;
+        if (hScrollChanged) {
+            this.$horizScroll = horizScroll;
+            this.scrollBarH.setVisible(horizScroll);
         }
-        var maxHeight = this.session.getScreenLength() * this.lineHeight;
-        this.session.setScrollTop(Math.max(0, Math.min(this.scrollTop, maxHeight - this.$size.scrollerHeight)));
+        // autoresize only after updating hscroll to include scrollbar height in desired height
+        if (this.$maxLines && this.lineHeight > 1)
+            this.$autosize();
+
+        var offset = this.scrollTop % this.lineHeight;
+        var minHeight = size.scrollerHeight + this.lineHeight;
+        
+        var scrollPastEnd = !this.$maxLines && this.$scrollPastEnd
+            ? (size.scrollerHeight - this.lineHeight) * this.$scrollPastEnd
+            : 0;
+        maxHeight += scrollPastEnd;
+        
+        var sm = this.scrollMargin;
+        this.session.setScrollTop(Math.max(-sm.top,
+            Math.min(this.scrollTop, maxHeight - size.scrollerHeight + sm.bottom)));
+
+        this.session.setScrollLeft(Math.max(-sm.left, Math.min(this.scrollLeft, 
+            longestLine + 2 * this.$padding - size.scrollerWidth + sm.right)));
+        
+        var vScroll = !hideScrollbars && (this.$vScrollBarAlwaysVisible ||
+            size.scrollerHeight - maxHeight + scrollPastEnd < 0 || this.scrollTop > sm.top);
+        var vScrollChanged = this.$vScroll !== vScroll;
+        if (vScrollChanged) {
+            this.$vScroll = vScroll;
+            this.scrollBarV.setVisible(vScroll);
+        }
 
         var lineCount = Math.ceil(minHeight / this.lineHeight) - 1;
         var firstRow = Math.max(0, Math.round((this.scrollTop - offset) / this.lineHeight));
@@ -781,11 +1005,23 @@ var VirtualRenderer = function(container, theme) {
         firstRowHeight = session.getRowLength(firstRow) * lineHeight;
 
         lastRow = Math.min(session.screenToDocumentRow(lastRow, 0), session.getLength() - 1);
-        minHeight = this.$size.scrollerHeight + session.getRowLength(lastRow) * lineHeight +
+        minHeight = size.scrollerHeight + session.getRowLength(lastRow) * lineHeight +
                                                 firstRowHeight;
 
         offset = this.scrollTop - firstRowScreen * lineHeight;
 
+        var changes = 0;
+        if (this.layerConfig.width != longestLine) 
+            changes = this.CHANGE_H_SCROLL;
+        // Horizontal scrollbar visibility may have changed, which changes
+        // the client height of the scroller
+        if (hScrollChanged || vScrollChanged) {
+            changes = this.$updateCachedSize(true, this.gutterWidth, size.width, size.height);
+            this._signal("scrollbarVisibilityChanged");
+            if (vScrollChanged)
+                longestLine = this.$getLongestLine();
+        }
+        
         this.layerConfig = {
             width : longestLine,
             padding : this.$padding,
@@ -797,21 +1033,14 @@ var VirtualRenderer = function(container, theme) {
             minHeight : minHeight,
             maxHeight : maxHeight,
             offset : offset,
+            gutterOffset : Math.max(0, Math.ceil((offset + size.height - size.scrollerHeight) / lineHeight)),
             height : this.$size.scrollerHeight
         };
 
         // For debugging.
         // console.log(JSON.stringify(this.layerConfig));
 
-        this.$gutterLayer.element.style.marginTop = (-offset) + "px";
-        this.content.style.marginTop = (-offset) + "px";
-        this.content.style.width = longestLine + 2 * this.$padding + "px";
-        this.content.style.height = minHeight + "px";
-
-        // Horizontal scrollbar visibility may have changed, which changes
-        // the client height of the scroller
-        if (horizScrollChanged)
-            this.onResize(true);
+        return changes;
     };
 
     this.$updateLines = function() {
@@ -839,7 +1068,7 @@ var VirtualRenderer = function(container, theme) {
 
     this.$getLongestLine = function() {
         var charCount = this.session.getScreenWidth();
-        if (this.$textLayer.showInvisibles)
+        if (this.showInvisibles && !this.session.$useWrapMode)
             charCount += 1;
 
         return Math.max(this.$size.scrollerWidth - 2 * this.$padding, Math.round(charCount * this.characterWidth));
@@ -934,7 +1163,7 @@ var VirtualRenderer = function(container, theme) {
     *
     * Scrolls the cursor into the first visibile area of the editor
     **/
-    this.scrollCursorIntoView = function(cursor, offset) {
+    this.scrollCursorIntoView = function(cursor, offset, $viewMargin) {
         // the editor is not visible
         if (this.$size.scrollerHeight === 0)
             return;
@@ -943,12 +1172,19 @@ var VirtualRenderer = function(container, theme) {
 
         var left = pos.left;
         var top = pos.top;
-
-        if (this.scrollTop > top) {
+        
+        var topMargin = $viewMargin && $viewMargin.top || 0;
+        var bottomMargin = $viewMargin && $viewMargin.bottom || 0;
+        
+        var scrollTop = this.$scrollAnimation ? this.session.getScrollTop() : this.scrollTop;
+        
+        if (scrollTop + topMargin > top) {
             if (offset)
                 top -= offset * this.$size.scrollerHeight;
+            if (top === 0)
+                top = -this.scrollMargin.top;
             this.session.setScrollTop(top);
-        } else if (this.scrollTop + this.$size.scrollerHeight < top + this.lineHeight) {
+        } else if (scrollTop + this.$size.scrollerHeight - bottomMargin < top + this.lineHeight) {
             if (offset)
                 top += offset * this.$size.scrollerHeight;
             this.session.setScrollTop(top + this.lineHeight - this.$size.scrollerHeight);
@@ -958,10 +1194,12 @@ var VirtualRenderer = function(container, theme) {
 
         if (scrollLeft > left) {
             if (left < this.$padding + 2 * this.layerConfig.characterWidth)
-                left = 0;
+                left = -this.scrollMargin.left;
             this.session.setScrollLeft(left);
         } else if (scrollLeft + this.$size.scrollerWidth < left + this.characterWidth) {
             this.session.setScrollLeft(Math.round(left + this.characterWidth - this.$size.scrollerWidth));
+        } else if (scrollLeft <= this.$padding && left - scrollLeft < this.characterWidth) {
+            this.session.setScrollLeft(0);
         }
     };
 
@@ -1063,31 +1301,45 @@ var VirtualRenderer = function(container, theme) {
 
     this.animateScrolling = function(fromValue, callback) {
         var toValue = this.scrollTop;
-        if (this.$animatedScroll && Math.abs(fromValue - toValue) < 100000) {
-            var _self = this;
-            var steps = _self.$calcSteps(fromValue, toValue);
-            this.$inScrollAnimation = true;
-
-            clearInterval(this.$timer);
-
-            _self.session.setScrollTop(steps.shift());
-            this.$timer = setInterval(function() {
-                if (steps.length) {
-                    _self.session.setScrollTop(steps.shift());
-                    // trick session to think it's already scrolled to not loose toValue
-                    _self.session.$scrollTop = toValue;
-                } else if (toValue != null) {
-                    _self.session.$scrollTop = -1;
-                    _self.session.setScrollTop(toValue);
-                    toValue = null;
-                } else {
-                    // do this on separate step to not get spurious scroll event from scrollbar
-                    _self.$timer = clearInterval(_self.$timer);
-                    _self.$inScrollAnimation = false;
-                    callback && callback();
-                }
-            }, 10);
+        if (!this.$animatedScroll)
+            return;
+        var _self = this;
+        
+        if (fromValue == toValue)
+            return;
+        
+        if (this.$scrollAnimation) {
+            var oldSteps = this.$scrollAnimation.steps;
+            if (oldSteps.length) {
+                fromValue = oldSteps[0];
+                if (fromValue == toValue)
+                    return;
+            }
         }
+        
+        var steps = _self.$calcSteps(fromValue, toValue);
+        this.$scrollAnimation = {from: fromValue, to: toValue, steps: steps};
+
+        clearInterval(this.$timer);
+
+        _self.session.setScrollTop(steps.shift());
+        // trick session to think it's already scrolled to not loose toValue
+        _self.session.$scrollTop = toValue;
+        this.$timer = setInterval(function() {
+            if (steps.length) {
+                _self.session.setScrollTop(steps.shift());
+                _self.session.$scrollTop = toValue;
+            } else if (toValue != null) {
+                _self.session.$scrollTop = -1;
+                _self.session.setScrollTop(toValue);
+                toValue = null;
+            } else {
+                // do this on separate step to not get spurious scroll event from scrollbar
+                _self.$timer = clearInterval(_self.$timer);
+                _self.$scrollAnimation = null;
+                callback && callback();
+            }
+        }, 10);
     };
 
     /**
@@ -1114,9 +1366,6 @@ var VirtualRenderer = function(container, theme) {
     * @returns {Number}
     **/
     this.scrollToX = function(scrollLeft) {
-        if (scrollLeft < 0)
-            scrollLeft = 0;
-
         if (this.scrollLeft !== scrollLeft)
             this.scrollLeft = scrollLeft;
         this.$loop.schedule(this.CHANGE_H_SCROLL);
@@ -1124,10 +1373,18 @@ var VirtualRenderer = function(container, theme) {
 
     /**
     * Scrolls the editor across both x- and y-axes.
+    * @param {Number} x The x value to scroll to
+    * @param {Number} y The y value to scroll to
+    **/
+    this.scrollTo = function(x, y) {
+        this.session.setScrollTop(y);
+        this.session.setScrollLeft(y);
+    };
+    
+    /**
+    * Scrolls the editor across both x- and y-axes.
     * @param {Number} deltaX The x value to scroll by
     * @param {Number} deltaY The y value to scroll by
-    *
-    *
     **/
     this.scrollBy = function(deltaX, deltaY) {
         deltaY && this.session.setScrollTop(this.session.getScrollTop() + deltaY);
@@ -1143,11 +1400,16 @@ var VirtualRenderer = function(container, theme) {
     * @returns {Boolean}
     **/
     this.isScrollableBy = function(deltaX, deltaY) {
-        if (deltaY < 0 && this.session.getScrollTop() >= 1)
+        if (deltaY < 0 && this.session.getScrollTop() >= 1 - this.scrollMargin.top)
            return true;
-        if (deltaY > 0 && this.session.getScrollTop() + this.$size.scrollerHeight - this.layerConfig.maxHeight < -1)
+        if (deltaY > 0 && this.session.getScrollTop() + this.$size.scrollerHeight
+            - this.layerConfig.maxHeight < -1 + this.scrollMargin.bottom)
            return true;
-        // todo: handle horizontal scrolling
+        if (deltaX < 0 && this.session.getScrollLeft() >= 1 - this.scrollMargin.left)
+            return true;
+        if (deltaX > 0 && this.session.getScrollLeft() + this.$size.scrollerWidth
+            - this.layerConfig.width < -1 + this.scrollMargin.right)
+           return true;
     };
 
     this.pixelToScreenCoordinates = function(x, y) {
@@ -1166,9 +1428,8 @@ var VirtualRenderer = function(container, theme) {
         var col = Math.round(
             (x + this.scrollLeft - canvasPos.left - this.$padding) / this.characterWidth
         );
-        var row = Math.floor(
-            (y + this.scrollTop - canvasPos.top) / this.lineHeight
-        );
+
+        var row = (y + this.scrollTop - canvasPos.top) / this.lineHeight;
 
         return this.session.screenToDocumentPosition(row, Math.max(col, 0));
     };
@@ -1196,26 +1457,26 @@ var VirtualRenderer = function(container, theme) {
     };
 
     /**
-    *
-    * Focuses the current container.
-    **/
+     *
+     * Focuses the current container.
+     **/
     this.visualizeFocus = function() {
         dom.addCssClass(this.container, "ace_focus");
     };
 
     /**
-    *
-    * Blurs the current container.
-    **/
+     *
+     * Blurs the current container.
+     **/
     this.visualizeBlur = function() {
         dom.removeCssClass(this.container, "ace_focus");
     };
 
     /**
-    * @param {Number} position
-    *
-    * @private
-    **/
+     * @param {Number} position
+     *
+     * @private
+     **/
     this.showComposition = function(position) {
         if (!this.$composition)
             this.$composition = {
@@ -1230,18 +1491,18 @@ var VirtualRenderer = function(container, theme) {
     };
 
     /**
-    * @param {String} text A string of text to use
-    *
-    * Sets the inner text of the current composition to `text`.
-    **/
+     * @param {String} text A string of text to use
+     *
+     * Sets the inner text of the current composition to `text`.
+     **/
     this.setCompositionText = function(text) {
         this.$moveTextAreaToCursor();
     };
 
     /**
-    *
-    * Hides the current composition.
-    **/
+     *
+     * Hides the current composition.
+     **/
     this.hideComposition = function() {
         if (!this.$composition)
             return;
@@ -1253,62 +1514,66 @@ var VirtualRenderer = function(container, theme) {
     };
 
     /**
-    * [Sets a new theme for the editor. `theme` should exist, and be a directory path, like `ace/theme/textmate`.]{: #VirtualRenderer.setTheme}
-    * @param {String} theme The path to a theme
-    *
-    *
-    **/
-    this.setTheme = function(theme) {
+     * [Sets a new theme for the editor. `theme` should exist, and be a directory path, like `ace/theme/textmate`.]{: #VirtualRenderer.setTheme}
+     * @param {String} theme The path to a theme
+     * @param {Function} cb optional callback
+     *
+     **/
+    this.setTheme = function(theme, cb) {
         var _self = this;
-        this.$themeValue = theme;
+        this.$themeId = theme;
         _self._dispatchEvent('themeChange',{theme:theme});
 
         if (!theme || typeof theme == "string") {
-            var moduleName = theme || "ace/theme/textmate";
+            var moduleName = theme || this.$options.theme.initialValue;
             config.loadModule(["theme", moduleName], afterLoad);
         } else {
             afterLoad(theme);
         }
 
-        function afterLoad(theme) {
-            if (!theme.cssClass)
+        function afterLoad(module) {
+            if (_self.$themeId != theme)
+                return cb && cb();
+            if (!module.cssClass)
                 return;
             dom.importCssString(
-                theme.cssText,
-                theme.cssClass,
+                module.cssText,
+                module.cssClass,
                 _self.container.ownerDocument
             );
 
             if (_self.theme)
                 dom.removeCssClass(_self.container, _self.theme.cssClass);
 
-            // this is kept only for backwards compatibility
-            _self.$theme = theme.cssClass;
-
-            _self.theme = theme;
-            dom.addCssClass(_self.container, theme.cssClass);
-            dom.setCssClass(_self.container, "ace_dark", theme.isDark);
-
-            var padding = theme.padding || 4;
+            var padding = "padding" in module ? module.padding 
+                : "padding" in (_self.theme || {}) ? 4 : _self.$padding;
             if (_self.$padding && padding != _self.$padding)
                 _self.setPadding(padding);
+                
+            // this is kept only for backwards compatibility
+            _self.$theme = module.cssClass;
+
+            _self.theme = module;
+            dom.addCssClass(_self.container, module.cssClass);
+            dom.setCssClass(_self.container, "ace_dark", module.isDark);
 
             // force re-measure of the gutter width
             if (_self.$size) {
                 _self.$size.width = 0;
-                _self.onResize();
+                _self.$updateSizeAsync();
             }
 
-            _self._dispatchEvent('themeLoaded',{theme:theme});
+            _self._dispatchEvent('themeLoaded', {theme:module});
+            cb && cb();
         }
     };
 
     /**
-    * [Returns the path of the current theme.]{: #VirtualRenderer.getTheme}
-    * @returns {String}
-    **/
+     * [Returns the path of the current theme.]{: #VirtualRenderer.getTheme}
+     * @returns {String}
+     **/
     this.getTheme = function() {
-        return this.$themeValue;
+        return this.$themeId;
     };
 
     // Methods allows to add / remove CSS classnames to the editor element.
@@ -1316,29 +1581,39 @@ var VirtualRenderer = function(container, theme) {
     // a certain mode that editor is in.
 
     /**
-    * [Adds a new class, `style`, to the editor.]{: #VirtualRenderer.setStyle}
-    * @param {String} style A class name
-    *
-    *
-    **/
-    this.setStyle = function setStyle(style, include) {
-        dom.setCssClass(this.container, style, include != false);
+     * [Adds a new class, `style`, to the editor.]{: #VirtualRenderer.setStyle}
+     * @param {String} style A class name
+     *
+     **/
+    this.setStyle = function(style, include) {
+        dom.setCssClass(this.container, style, include !== false);
     };
 
     /**
-    * [Removes the class `style` from the editor.]{: #VirtualRenderer.unsetStyle}
-    * @param {String} style A class name
-    *
-    *
-    **/
-    this.unsetStyle = function unsetStyle(style) {
+     * [Removes the class `style` from the editor.]{: #VirtualRenderer.unsetStyle}
+     * @param {String} style A class name
+     *
+     **/
+    this.unsetStyle = function(style) {
         dom.removeCssClass(this.container, style);
     };
+    
+    this.setCursorStyle = function(style) {
+        if (this.scroller.style.cursor != style)
+            this.scroller.style.cursor = style;
+    };
 
     /**
-    *
-    * Destroys the text and cursor layers for this renderer.
-    **/
+     * @param {String} cursorStyle A css cursor style
+     *
+     **/
+    this.setMouseCursor = function(cursorStyle) {
+        this.scroller.style.cursor = cursorStyle;
+    };
+
+    /**
+     * Destroys the text and cursor layers for this renderer.
+     **/
     this.destroy = function() {
         this.$textLayer.destroy();
         this.$cursorLayer.destroy();
@@ -1378,6 +1653,7 @@ config.defineOptions(VirtualRenderer.prototype, "renderer", {
     showGutter: {
         set: function(show){
             this.$gutter.style.display = show ? "block" : "none";
+            this.$loop.schedule(this.CHANGE_FULL);
             this.onGutterResize();
         },
         initialValue: true
@@ -1390,6 +1666,13 @@ config.defineOptions(VirtualRenderer.prototype, "renderer", {
     },
     showFoldWidgets: {
         set: function(show) {this.$gutterLayer.setShowFoldWidgets(show)},
+        initialValue: true
+    },
+    showLineNumbers: {
+        set: function(show) {
+            this.$gutterLayer.setShowLineNumbers(show);
+            this.$loop.schedule(this.CHANGE_GUTTER);
+        },
         initialValue: true
     },
     displayIndentGuides: {
@@ -1417,9 +1700,15 @@ config.defineOptions(VirtualRenderer.prototype, "renderer", {
         value: true
     },
     hScrollBarAlwaysVisible: {
-        set: function(alwaysVisible) {
-            this.$hScrollBarAlwaysVisible = alwaysVisible;
+        set: function(val) {
             if (!this.$hScrollBarAlwaysVisible || !this.$horizScroll)
+                this.$loop.schedule(this.CHANGE_SCROLL);
+        },
+        initialValue: false
+    },
+    vScrollBarAlwaysVisible: {
+        set: function(val) {
+            if (!this.$vScrollBarAlwaysVisible || !this.$vScroll)
                 this.$loop.schedule(this.CHANGE_SCROLL);
         },
         initialValue: false
@@ -1438,6 +1727,39 @@ config.defineOptions(VirtualRenderer.prototype, "renderer", {
             this.container.style.fontFamily = name;
             this.updateFontSize();
         }
+    },
+    maxLines: {
+        set: function(val) {
+            this.updateFull();
+        }
+    },
+    minLines: {
+        set: function(val) {
+            this.updateFull();
+        }
+    },
+    scrollPastEnd: {
+        set: function(val) {
+            val = +val || 0;
+            if (this.$scrollPastEnd == val)
+                return;
+            this.$scrollPastEnd = val;
+            this.$loop.schedule(this.CHANGE_SCROLL);
+        },
+        initialValue: 0,
+        handlesSet: true
+    },
+    fixedWidthGutter: {
+        set: function(val) {
+            this.$gutterLayer.$fixedWidth = !!val;
+            this.$loop.schedule(this.CHANGE_GUTTER);
+        }
+    },
+    theme: {
+        set: function(val) { this.setTheme(val) },
+        get: function() { return this.$themeId || this.theme; },
+        initialValue: "./theme/textmate",
+        handlesSet: true
     }
 });
 

@@ -33,7 +33,6 @@ define(function(require, exports, module) {
 
 var oop = require("../lib/oop");
 var TextMode = require("./text").Mode;
-var Tokenizer = require("../tokenizer").Tokenizer;
 var JavaScriptHighlightRules = require("./javascript_highlight_rules").JavaScriptHighlightRules;
 var MatchingBraceOutdent = require("./matching_brace_outdent").MatchingBraceOutdent;
 var Range = require("../range").Range;
@@ -42,7 +41,8 @@ var CstyleBehaviour = require("./behaviour/cstyle").CstyleBehaviour;
 var CStyleFoldMode = require("./folding/cstyle").FoldMode;
 
 var Mode = function() {
-    this.$tokenizer = new Tokenizer(new JavaScriptHighlightRules().getRules());
+    this.HighlightRules = JavaScriptHighlightRules;
+    
     this.$outdent = new MatchingBraceOutdent();
     this.$behaviour = new CstyleBehaviour();
     this.foldingRules = new CStyleFoldMode();
@@ -57,7 +57,7 @@ oop.inherits(Mode, TextMode);
     this.getNextLineIndent = function(state, line, tab) {
         var indent = this.$getIndent(line);
 
-        var tokenizedLine = this.$tokenizer.getLineTokens(line, state);
+        var tokenizedLine = this.getTokenizer().getLineTokens(line, state);
         var tokens = tokenizedLine.tokens;
         var endState = tokenizedLine.state;
 
@@ -98,7 +98,7 @@ oop.inherits(Mode, TextMode);
         var worker = new WorkerClient(["ace"], "ace/mode/javascript_worker", "JavaScriptWorker");
         worker.attachToDocument(session.getDocument());
 
-        worker.on("jslint", function(results) {
+        worker.on("annotate", function(results) {
             session.setAnnotations(results.data);
         });
 
@@ -109,6 +109,7 @@ oop.inherits(Mode, TextMode);
         return worker;
     };
 
+    this.$id = "ace/mode/javascript";
 }).call(Mode.prototype);
 
 exports.Mode = Mode;
