@@ -1,4 +1,4 @@
-define(["require", "exports", 'ace/keyboard/hash_handler', "ace/lib/event_emitter", 'AutoCompleteView'], function (require, exports, hash_handler_1, event_emitter_1, AutoCompleteView_1) {
+define(["require", "exports", 'ace/keyboard/hash_handler', "ace/lib/event_emitter", 'AutoCompleteView', "ace/range"], function (require, exports, hash_handler_1, event_emitter_1, AutoCompleteView_1, range_1) {
     var oop = require("ace/lib/oop");
     var AutoComplete = (function () {
         function AutoComplete(editor, script, compilationService) {
@@ -56,11 +56,13 @@ define(["require", "exports", 'ace/keyboard/hash_handler', "ace/lib/event_emitte
             };
             this.refreshCompilation = function (e) {
                 var cursor = _this.editor.getCursorPosition();
-                if (e.data.action == "insertText") {
+                var data = e;
+                var newText = _this.editor.getSession().getTextRange(new range_1.Range(data.start.row, data.start.column, data.end.row, data.end.column));
+                if (e.action == "insert") {
                     cursor.column += 1;
                 }
-                else if (e.data.action == "removeText") {
-                    if (e.data.text == '\n') {
+                else if (e.action == "remove") {
+                    if (newText == '\n') {
                         _this.deactivate();
                         return;
                     }

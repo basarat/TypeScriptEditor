@@ -1,6 +1,7 @@
 import {HashHandler} from 'ace/keyboard/hash_handler';
 import {EventEmitter}  from "ace/lib/event_emitter";
 import {AutoCompleteView} from 'AutoCompleteView';
+import {Range as AceRange} from "ace/range";
 
 var oop = require("ace/lib/oop");
 
@@ -175,12 +176,14 @@ export class AutoComplete {
         return compilations.length;
     };
 
-    refreshCompilation = (e) => {
+    refreshCompilation = (e:AceAjax.EditorChangeEvent) => {
         var cursor = this.editor.getCursorPosition();
-        if(e.data.action  == "insertText"){
+        var data = e;
+        var newText = this.editor.getSession().getTextRange(new AceRange(data.start.row, data.start.column, data.end.row, data.end.column));
+        if(e.action  == "insert"){
             cursor.column += 1;
-        } else if (e.data.action  == "removeText"){
-            if(e.data.text == '\n'){
+        } else if (e.action  == "remove"){
+            if(newText == '\n'){
                 this.deactivate();
                 return;
             }

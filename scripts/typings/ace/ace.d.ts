@@ -1035,6 +1035,7 @@ declare module AceAjax {
     **/
     export interface Editor {
         
+        addEventListener(ev: 'change', callback: (ev: EditorChangeEvent) => any);
         addEventListener(ev: string, callback: Function);
 
         inMultiSelectMode: boolean;
@@ -1711,6 +1712,13 @@ declare module AceAjax {
          * @param session The `EditSession` to refer to
         **/
         new(renderer: VirtualRenderer, session?: IEditSession): Editor;
+    }
+    
+    interface EditorChangeEvent {
+        start: Position;
+        end: Position;
+        action: string; // insert, remove
+        lines: any[];
     }
 
     ////////////////////////////////

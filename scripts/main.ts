@@ -64,14 +64,7 @@ function startAutoComplete(editor){
     }
 }
 
-interface AceUpdateEvent{
-    start: AceAjax.Position;
-    end: AceAjax.Position;
-    action: string; // insert, remove
-    lines: any[];
-}
-
-function onUpdateDocument(e: AceUpdateEvent) {
+function onUpdateDocument(e: AceAjax.EditorChangeEvent) {
     if (selectFileName) {
         if (!syncStop) {
             syncTypeScriptServiceContent(selectFileName, e);
@@ -81,7 +74,7 @@ function onUpdateDocument(e: AceUpdateEvent) {
 }
 
 // TODO check column
-function updateMarker(data:AceUpdateEvent){    
+function updateMarker(data:AceAjax.EditorChangeEvent){    
     var action = data.action;
     var action = data.action;
     var start = aceEditorPosition.getPositionChars(data.start);
@@ -126,7 +119,7 @@ function updateMarker(data:AceUpdateEvent){
 }
 
 //sync LanguageService content and ace editor content
-function syncTypeScriptServiceContent(script, data:AceUpdateEvent){
+function syncTypeScriptServiceContent(script, data:AceAjax.EditorChangeEvent){
 
     var action = data.action;
     var start = aceEditorPosition.getPositionChars(data.start);
