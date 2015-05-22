@@ -12,8 +12,8 @@ define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete
     var autoComplete = null;
     var refMarkers = [];
     var errorMarkers = [];
-    var libFiles = ["typescripts/libOld.d.ts"];
     function loadLibFiles() {
+        var libFiles = ["typescripts/libOld.d.ts"];
         libFiles.forEach(function (libname) {
             utils_1.readFile(libname, function (content) {
                 typeScriptLS.addScript(libname, content.replace(/\r\n?/g, "\n"), true);

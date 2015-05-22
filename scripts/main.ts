@@ -29,9 +29,9 @@ var refMarkers = [];
 var errorMarkers =[];
 
 
-var libFiles = ["typescripts/libOld.d.ts"];
-
 function loadLibFiles(){    
+
+    var libFiles = ["typescripts/libOld.d.ts"];
     
     // Load files here 
     libFiles.forEach(function(libname){
