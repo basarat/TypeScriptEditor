@@ -27,20 +27,14 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * ***** END LICENSE BLOCK ***** */
-define(function (require, exports, module) {
-    "no use strict";
-    var oop = require("../../lib/oop");
-    var Mirror = require("../../worker/mirror").Mirror;
-    var lang = require("../../lib/lang");
-    var Document = require("../../document").Document;
-    var DocumentPositionUtil = require('./DocumentPositionUtil').DocumentPositionUtil;
+define(["require", "exports", "./DocumentPositionUtil", "ace/lib/oop", "ace/worker/mirror", "ace/lib/lang", "ace/document"], function (require, exports, DocumentPositionUtil_1, oop, mirror_1, lang, document_1) {
     var workerSVC = require('./typescriptServicesOld');
     var Services = workerSVC.Services;
     var TypeScript = workerSVC.TypeScript;
     var TypeScriptLS = require('./lightHarness').TypeScriptLS;
-    var TypeScriptWorker = exports.TypeScriptWorker = function (sender) {
+    function TypeScriptWorker(sender) {
         this.sender = sender;
-        var doc = this.doc = new Document("");
+        var doc = this.doc = new document_1.Document("");
         var deferredUpdate = this.deferredUpdate = lang.deferredCall(this.onUpdate.bind(this));
         this.typeScriptLS = new TypeScriptLS();
         this.ServicesFactory = new Services.TypeScriptServicesFactory();
@@ -73,8 +67,10 @@ define(function (require, exports, module) {
         });
         this.setOptions();
         sender.emit("initAfter");
-    };
-    oop.inherits(TypeScriptWorker, Mirror);
+    }
+    exports.TypeScriptWorker = TypeScriptWorker;
+    ;
+    oop.inherits(TypeScriptWorker, mirror_1.Mirror);
     (function () {
         var proto = this;
         this.setOptions = function (options) {
@@ -156,7 +152,7 @@ define(function (require, exports, module) {
             var self = this;
             this.sender.emit("compiled", this.compile(this.doc.getValue()));
             errors.forEach(function (error) {
-                var pos = DocumentPositionUtil.getPosition(self.doc, error.minChar);
+                var pos = DocumentPositionUtil_1.DocumentPositionUtil.getPosition(self.doc, error.minChar);
                 annotations.push({
                     row: pos.row,
                     column: pos.column,
