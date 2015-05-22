@@ -9,11 +9,10 @@ node http-server
 # TypeScript source
 
 Files used from the Typescript project on codeplex:
-- lightHarness (from harness.js)
+- typescriptServices.d.ts
 - typescriptServices.js
-were used from the typescript project.
-
-Comments are mentioned in how they were modified, so you should be able to update to the latest version of Typescript fairly easily.
+- lib.d.ts
+were used from the typescript project AS IS.
 
 ## Adding a TypeScript Mode 
 Needs files in the ace modes folder
