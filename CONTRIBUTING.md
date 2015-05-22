@@ -20,15 +20,19 @@ Needs files in the ace modes folder
 specifically:
 
 ```ts
-typescript.js
+// Existing
 typescript_highlight_rules.js
-typescript_worker.js
+typescript.js
 ```
 It is conventional to put files that *additional* files need into the `modes/typescript/` folder so that they do not pollute the root modes folder.
 
 ### File Details
-* `typescript_highlight_rules` is taken as is from core `ace` source (no modificiations needed).
-* `typescript.js` was modified to create a worker. See create a worker. 
+#### Original
+* `typescript_highlight_rules` is taken as is from core `ace` source (no modifications needed).
+* `typescript.js` was modified to create a worker. Basically just the `createWorker` function is redirected to our own file
+
+#### New files
+* `typescript_create_worker` : starts a webworker.
 * `typescript_worker.js` this file is new. Its based on the `javascript_worker.js` This file talks to the TypeScript language service.
 
 # Ace

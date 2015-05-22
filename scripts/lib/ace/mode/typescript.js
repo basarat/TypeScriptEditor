@@ -42,7 +42,6 @@ var TypeScriptHighlightRules = require("./typescript_highlight_rules").TypeScrip
 var CstyleBehaviour = require("./behaviour/cstyle").CstyleBehaviour;
 var CStyleFoldMode = require("./folding/cstyle").FoldMode;
 var MatchingBraceOutdent = require("./matching_brace_outdent").MatchingBraceOutdent;
-var WorkerClient = require("../worker/worker_client").WorkerClient;
 
 var Mode = function() {
     var highlighter = new TypeScriptHighlightRules();
@@ -55,35 +54,8 @@ var Mode = function() {
 oop.inherits(Mode, jsMode);
 
 (function() {
-    this.createWorker = function(session) {
-        
-        var worker = new WorkerClient(
-            // WorkerClient will load `ace`. 
-            ["ace"], 
-            // The worker client is itself located in this file
-            "ace/mode/typescript_worker",
-            // And within the file it wants this member as the worker class
-            "TypeScriptWorker"
-        );
-        
-        worker.attachToDocument(session.getDocument());
-
-        worker.on("terminate", function() {
-            session.clearAnnotations();
-        });
-
-        worker.on("compileErrors", function(results) {
-            session.setAnnotations(results.data);
-            session._emit("compileErrors", {data: results.data});
-
-        });
-
-        worker.on("compiled", function(result) {
-            session._emit("compiled", {data: result.data});
-        });
-
-        return worker;
-    };
+    this.createWorker = require("./typescript/typescript_create_worker").createWorker;
+    this.$id = "ace/mode/typescript";
 }).call(Mode.prototype);
 
 exports.Mode = Mode;
