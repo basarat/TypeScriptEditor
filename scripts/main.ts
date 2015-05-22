@@ -28,21 +28,32 @@ var autoComplete = null;
 var refMarkers = [];
 var errorMarkers =[];
 
-function loadTypeScriptLibrary(){
-    var libnames = [
-        "typescripts/libOld.d.ts"
-    ];
 
-    // Add a non network script to get the balls rolling more quickly
-    // See https://typescript.codeplex.com/workitem/129
-    var iArgs = "interface IArguments {           [index: number]: any;        length: number;        callee: Function;    }";
-    typeScriptLS.addScript('start.d.ts',iArgs,true);
+var libFiles = ["typescripts/libOld.d.ts"];
 
-    libnames.forEach(function(libname){
+function loadLibFiles(){    
+    
+    // Load files here 
+    libFiles.forEach(function(libname){
         readFile(libname, function(content){
             typeScriptLS.addScript(libname, content.replace(/\r\n?/g,"\n"), true);
         });
     });
+
+    // Load files in the worker
+    workerOnCreate(function(){//TODO use worker init event
+        libFiles.forEach(function(libname){
+            readFile(libname, function(content){
+                var params = {
+                    data: {
+                        name:libname,
+                        content:content.replace(/\r\n?/g,"\n")
+                    }
+                };
+                editor.getSession().$worker.emit("addLibrary", params );
+            });
+        });
+    }, 100);
 }
 
 function loadFile(filename) {
@@ -278,7 +289,7 @@ $(function(){
     document.getElementById('editor').style.fontSize='14px';
     document.getElementById('output').style.fontSize='14px';
 
-    loadTypeScriptLibrary();
+    loadLibFiles();
     loadFile("samples/greeter.ts");
 
     editor.addEventListener("change", onUpdateDocument);
@@ -353,22 +364,8 @@ $(function(){
             var range = new AceRange(start.row, start.column, end.row, end.column);
             errorMarkers.push(session.addMarker(range, "typescript-error", "text", true));
         });
-    });
-
-    workerOnCreate(function(){//TODO use worker init event
-
-        ["typescripts/lib.d.ts"].forEach(function(libname){
-            readFile(libname, function(content){
-                var params = {
-                    data: {
-                        name:libname,
-                        content:content.replace(/\r\n?/g,"\n")
-                    }
-                };
-                editor.getSession().$worker.emit("addLibrary", params );
-            });
-        });
-    }, 100);
+    });    
+    
 
     $("#javascript-run").click(function(e){
         javascriptRun(outputEditor.getSession().doc.getValue());

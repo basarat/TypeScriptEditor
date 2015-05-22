@@ -12,17 +12,26 @@ define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete
     var autoComplete = null;
     var refMarkers = [];
     var errorMarkers = [];
-    function loadTypeScriptLibrary() {
-        var libnames = [
-            "typescripts/libOld.d.ts"
-        ];
-        var iArgs = "interface IArguments {           [index: number]: any;        length: number;        callee: Function;    }";
-        typeScriptLS.addScript('start.d.ts', iArgs, true);
-        libnames.forEach(function (libname) {
+    var libFiles = ["typescripts/libOld.d.ts"];
+    function loadLibFiles() {
+        libFiles.forEach(function (libname) {
             utils_1.readFile(libname, function (content) {
                 typeScriptLS.addScript(libname, content.replace(/\r\n?/g, "\n"), true);
             });
         });
+        workerOnCreate(function () {
+            libFiles.forEach(function (libname) {
+                utils_1.readFile(libname, function (content) {
+                    var params = {
+                        data: {
+                            name: libname,
+                            content: content.replace(/\r\n?/g, "\n")
+                        }
+                    };
+                    editor.getSession().$worker.emit("addLibrary", params);
+                });
+            });
+        }, 100);
     }
     function loadFile(filename) {
         utils_1.readFile(filename, function (content) {
@@ -222,7 +231,7 @@ define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete
         outputEditor.getSession().setMode('ace/mode/javascript');
         document.getElementById('editor').style.fontSize = '14px';
         document.getElementById('output').style.fontSize = '14px';
-        loadTypeScriptLibrary();
+        loadLibFiles();
         loadFile("samples/greeter.ts");
         editor.addEventListener("change", onUpdateDocument);
         editor.addEventListener("changeSelection", onChangeCursor);
@@ -288,19 +297,6 @@ define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete
                 errorMarkers.push(session.addMarker(range, "typescript-error", "text", true));
             });
         });
-        workerOnCreate(function () {
-            ["typescripts/lib.d.ts"].forEach(function (libname) {
-                utils_1.readFile(libname, function (content) {
-                    var params = {
-                        data: {
-                            name: libname,
-                            content: content.replace(/\r\n?/g, "\n")
-                        }
-                    };
-                    editor.getSession().$worker.emit("addLibrary", params);
-                });
-            });
-        }, 100);
         $("#javascript-run").click(function (e) {
             utils_1.javascriptRun(outputEditor.getSession().doc.getValue());
         });
