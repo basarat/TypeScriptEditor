@@ -74,7 +74,6 @@ define(["require", "exports", "./DocumentPositionUtil", "ace/lib/oop", "ace/work
                 _this.deferredUpdate.schedule(100);
             };
             this.addlibrary = function (name, content) {
-                console.log(name);
                 tsProject.languageServiceHost.addScript(name, content);
             };
             this.getCompletionsAtPosition = function (fileName, pos, isMemberCompletion, id) {

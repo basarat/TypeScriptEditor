@@ -95,7 +95,6 @@ export class TypeScriptWorker {
     };
     
     addlibrary = (name, content) => {
-        console.log(name);
         tsProject.languageServiceHost.addScript(name, content);
     };
     
