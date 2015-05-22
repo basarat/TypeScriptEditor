@@ -3,6 +3,20 @@ body{
     color: white;
 }
 
+::-webkit-scrollbar {
+   width: 8px;
+   height: 8px;
+}
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+    background: #222425;
+}
+::-webkit-scrollbar-thumb {
+   background: #AAA;
+   border-radius: 5px;
+   box-shadow: 0 0 1px black inset;
+}
+
 .warp-container{
     float:left;
     width:49%;
