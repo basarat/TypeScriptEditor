@@ -9,7 +9,7 @@ exports.createWorker = function(session) {
         // WorkerClient will load `ace`. 
         ["ace"], 
         // The worker client is itself located in this file
-        "ace/mode/typescript_worker",
+        "ace/mode/typescript/typescript_worker",
         // And within the file it wants this member as the worker class
         "TypeScriptWorker"
     );

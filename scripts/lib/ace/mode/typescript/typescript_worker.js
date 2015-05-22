@@ -31,14 +31,15 @@
 define(function(require, exports, module) {
     "no use strict";
 
-    var oop = require("../lib/oop");
-    var Mirror = require("../worker/mirror").Mirror;
-    var lang = require("../lib/lang");
-    var Document = require("../document").Document;
-    var DocumentPositionUtil = require('./typescript/DocumentPositionUtil').DocumentPositionUtil;
-    var Services = require('./typescript/typescriptServices').Services;
-    var TypeScript = require('./typescript/typescriptServices').TypeScript;
-    var TypeScriptLS = require('./typescript/lightHarness').TypeScriptLS;
+    var oop = require("ace/lib/oop");
+    var Mirror = require("../../worker/mirror").Mirror;
+    var lang = require("../../lib/lang");
+    var Document = require("../../document").Document;
+    
+    var DocumentPositionUtil = require('./DocumentPositionUtil').DocumentPositionUtil;
+    var Services = require('./typescriptServices').Services;
+    var TypeScript = require('./typescriptServices').TypeScript;
+    var TypeScriptLS = require('./lightHarness').TypeScriptLS;
 
     var TypeScriptWorker = exports.TypeScriptWorker = function(sender) {
         this.sender = sender;
@@ -61,8 +62,6 @@ define(function(require, exports, module) {
         sender.on("addLibrary", function(e) {
             self.addlibrary(e.data.name , e.data.content);
         });
-
-
 
         this.setOptions();
         sender.emit("initAfter");
