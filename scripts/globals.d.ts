@@ -53,17 +53,3 @@ declare module "ace/document" {
 // hopefully we wouldn't need this eventually. 
 // But the files in the worker are really stingy about relative paths and we are forced to use full paths
 declare var define:any;
-
-/**
- * Our code that need to be TSified
- */
-
-declare module "ace/mode/typescript/typescriptServicesOld" {
-    var foo: { Services: any; TypeScript: any };
-    export = foo;
-}
-
-declare module "ace/mode/typescript/lightHarness" {
-    var foo: { TypeScriptLS: any };
-    export = foo;
-}

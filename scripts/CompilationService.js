@@ -1,13 +1,12 @@
-define(["require", "exports", './EditorPosition'], function (require, exports, EditorPosition_1) {
+define(["require", "exports", './EditorPosition', "./lib/ace/mode/typescript/tsProject"], function (require, exports, EditorPosition_1, tsProject_1) {
+    var tsProject = tsProject_1.getTSProject();
     var CompilationService = (function () {
-        function CompilationService(editor, ServiceShim) {
+        function CompilationService(editor) {
             this.editor = editor;
-            this.ServiceShim = ServiceShim;
             this.editorPos = new EditorPosition_1.EditorPosition(editor);
         }
         CompilationService.prototype.getCompilation = function (script, charpos, isMemberCompletion) {
-            var compInfo;
-            compInfo = this.ServiceShim.languageService.getCompletionsAtPosition(script, charpos, isMemberCompletion);
+            var compInfo = tsProject.languageService.getCompletionsAtPosition(script, charpos);
             return compInfo;
         };
         ;

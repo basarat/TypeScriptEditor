@@ -4,6 +4,7 @@ import {AutoCompleteView} from 'AutoCompleteView';
 import {Range as AceRange} from "ace/range";
 
 var oop = require("ace/lib/oop");
+import {CompilationService} from "./CompilationService";
 
 export class AutoComplete {
     listElement: any;
@@ -17,7 +18,7 @@ export class AutoComplete {
     // From EventEmitter base class: 
     _emit: any;
 
-    constructor(public editor, public script,  public compilationService){
+    constructor(public editor, public script,  public compilationService: CompilationService){
         oop.implement(this, EventEmitter);
         
         this.handler = new HashHandler();
@@ -192,7 +193,7 @@ export class AutoComplete {
         this.compilation(cursor);
     };
 
-    showCompilation = (infos) => {
+    showCompilation = (infos: ts.CompletionEntry[]) => {
         if (infos.length > 0){
             this.view.show();
             var html = '';
@@ -200,7 +201,7 @@ export class AutoComplete {
             for(var n in infos) {
                 var info = infos[n];
                 var name =  '<span class="label-name">' + info.name + '</span>';
-                var type =  '<span class="label-type">' + info.type + '</span>';
+                var type =  '<span class="label-type">' + info.kind + '</span>';
                 var kind =  '<span class="label-kind label-kind-'+ info.kind + '">' + info.kind.charAt(0) + '</span>';
 
                 html += '<li data-name="' + info.name + '">' + kind + name + type + '</li>';

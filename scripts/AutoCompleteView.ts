@@ -1,4 +1,5 @@
 declare var $:any;
+import {AutoComplete}  from "./AutoComplete";
 
 export class AutoCompleteView{
 
@@ -7,7 +8,7 @@ export class AutoCompleteView{
     public wrap;
     public listElement;
 
-    constructor(public editor,public autoComplete){
+    constructor(public editor,public autoComplete:AutoComplete){
         this.wrap = document.createElement('div');
         this.listElement = document.createElement('ul');
         this.wrap.className = 'ace_autocomplete';

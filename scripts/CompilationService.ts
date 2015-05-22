@@ -1,17 +1,18 @@
 import {EditorPosition} from './EditorPosition';
+import {getTSProject} from "./lib/ace/mode/typescript/tsProject";
+var tsProject = getTSProject();
 
 export class CompilationService{
 
     public editorPos: EditorPosition;
     public matchText: string;
 
-    constructor(public editor,public ServiceShim){
+    constructor(public editor){
         this.editorPos = new EditorPosition(editor);
     }
 
     getCompilation (script, charpos, isMemberCompletion) {
-        var compInfo;
-        compInfo = this.ServiceShim.languageService.getCompletionsAtPosition(script, charpos, isMemberCompletion);
+        var compInfo = tsProject.languageService.getCompletionsAtPosition(script, charpos);
         return compInfo;
     };
 

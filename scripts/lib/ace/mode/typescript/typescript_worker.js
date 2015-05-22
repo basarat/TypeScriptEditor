@@ -27,19 +27,12 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * ***** END LICENSE BLOCK ***** */
-define(["require", "exports", "./DocumentPositionUtil", "ace/lib/oop", "ace/worker/mirror", "ace/lib/lang", "ace/document"], function (require, exports, DocumentPositionUtil_1, oop, mirror_1, lang, document_1) {
-    var workerSVC = require('./typescriptServicesOld');
-    var Services = workerSVC.Services;
-    var TypeScript = workerSVC.TypeScript;
-    var TypeScriptLS = require('./lightHarness').TypeScriptLS;
-    function TypeScriptWorker(sender) {
+define(["require", "exports", "./DocumentPositionUtil", "ace/lib/oop", "ace/worker/mirror", "ace/lib/lang", "ace/document", "./tsProject"], function (require, exports, DocumentPositionUtil_1, oop, mirror_1, lang, document_1, tsProject_1) {
+    var tsProject = tsProject_1.getTSProject();
+    function setupInheritanceCall(sender) {
         this.sender = sender;
         var doc = this.doc = new document_1.Document("");
         var deferredUpdate = this.deferredUpdate = lang.deferredCall(this.onUpdate.bind(this));
-        this.typeScriptLS = new TypeScriptLS();
-        this.ServicesFactory = new Services.TypeScriptServicesFactory();
-        this.serviceShim = this.ServicesFactory.createLanguageServiceShim(this.typeScriptLS);
-        this.languageService = this.serviceShim.languageService;
         var _self = this;
         sender.on("change", function (e) {
             var data = e.data;
@@ -68,30 +61,69 @@ define(["require", "exports", "./DocumentPositionUtil", "ace/lib/oop", "ace/work
         this.setOptions();
         sender.emit("initAfter");
     }
-    exports.TypeScriptWorker = TypeScriptWorker;
     ;
+    var TypeScriptWorker = (function () {
+        function TypeScriptWorker(sender) {
+            var _this = this;
+            this.sender = sender;
+            this.setOptions = function (options) {
+                _this.options = options || {};
+            };
+            this.changeOptions = function (newOptions) {
+                oop.mixin(_this.options, newOptions);
+                _this.deferredUpdate.schedule(100);
+            };
+            this.addlibrary = function (name, content) {
+                console.log(name);
+                tsProject.languageServiceHost.addScript(name, content);
+            };
+            this.getCompletionsAtPosition = function (fileName, pos, isMemberCompletion, id) {
+                var ret = tsProject.languageService.getCompletionsAtPosition(fileName, pos);
+                _this.sender.callback(ret, id);
+            };
+            this.onUpdate = function () {
+                var fileName = "temp.ts";
+                if (tsProject.languageServiceHost.hasScript(fileName)) {
+                    tsProject.languageServiceHost.updateScript(fileName, _this.doc.getValue());
+                }
+                else {
+                    tsProject.languageServiceHost.addScript(fileName, _this.doc.getValue());
+                }
+                var services = tsProject.languageService;
+                var output = services.getEmitOutput(fileName);
+                var jsOutput = output.outputFiles.map(function (o) { return o.text; }).join('\n');
+                var allDiagnostics = services.getCompilerOptionsDiagnostics()
+                    .concat(services.getSyntacticDiagnostics(fileName))
+                    .concat(services.getSemanticDiagnostics(fileName));
+                _this.sender.emit("compiled", jsOutput);
+                var annotations = [];
+                allDiagnostics.forEach(function (error) {
+                    var pos = DocumentPositionUtil_1.DocumentPositionUtil.getPosition(_this.doc, error.start);
+                    annotations.push({
+                        row: pos.row,
+                        column: pos.column,
+                        text: error.messageText,
+                        minChar: error.start,
+                        limChar: error.start + error.length,
+                        type: "error",
+                        raw: error.messageText
+                    });
+                });
+                _this.sender.emit("compileErrors", annotations);
+            };
+            setupInheritanceCall.call(this, sender);
+        }
+        return TypeScriptWorker;
+    })();
+    exports.TypeScriptWorker = TypeScriptWorker;
     oop.inherits(TypeScriptWorker, mirror_1.Mirror);
     (function () {
         var proto = this;
-        this.setOptions = function (options) {
-            this.options = options || {};
-        };
-        this.changeOptions = function (newOptions) {
-            oop.mixin(this.options, newOptions);
-            this.deferredUpdate.schedule(100);
-        };
-        this.addlibrary = function (name, content) {
-            this.typeScriptLS.addScript(name, content.replace(/\r\n?/g, "\n"), true);
-        };
-        this.getCompletionsAtPosition = function (fileName, pos, isMemberCompletion, id) {
-            var ret = this.languageService.getCompletionsAtPosition(fileName, pos, isMemberCompletion);
-            this.sender.callback(ret, id);
-        };
         ["getTypeAtPosition",
             "getSignatureAtPosition",
             "getDefinitionAtPosition"].forEach(function (elm) {
             proto[elm] = function (fileName, pos, id) {
-                var ret = this.languageService[elm](fileName, pos);
+                var ret = tsProject.languageService[elm](fileName, pos);
                 this.sender.callback(ret, id);
             };
         });
@@ -99,7 +131,7 @@ define(["require", "exports", "./DocumentPositionUtil", "ace/lib/oop", "ace/work
             "getOccurrencesAtPosition",
             "getImplementorsAtPosition"].forEach(function (elm) {
             proto[elm] = function (fileName, pos, id) {
-                var referenceEntries = this.languageService[elm](fileName, pos);
+                var referenceEntries = tsProject.languageService[elm](fileName, pos);
                 var ret = referenceEntries.map(function (ref) {
                     return {
                         unitIndex: ref.unitIndex,
@@ -114,56 +146,9 @@ define(["require", "exports", "./DocumentPositionUtil", "ace/lib/oop", "ace/work
             "getScriptLexicalStructure",
             "getOutliningRegions "].forEach(function (elm) {
             proto[elm] = function (value, id) {
-                var navs = this.languageService[elm](value);
+                var navs = tsProject.languageService[elm](value);
                 this.sender.callback(navs, id);
             };
         });
-        this.compile = function (typeScriptContent) {
-            var output = "";
-            var outfile = {
-                Write: function (s) {
-                    output += s;
-                },
-                WriteLine: function (s) {
-                    output += s + "\n";
-                },
-                Close: function () {
-                }
-            };
-            var outerr = {
-                Write: function (s) {
-                },
-                WriteLine: function (s) {
-                },
-                Close: function () {
-                }
-            };
-            var compiler = new TypeScript.TypeScriptCompiler(outfile, outerr, new TypeScript.NullLogger(), new TypeScript.CompilationSettings());
-            compiler.addUnit(typeScriptContent, "output.js", false);
-            compiler.typeCheck();
-            compiler.emit(false, function (name) {
-            });
-            return output;
-        };
-        this.onUpdate = function () {
-            this.typeScriptLS.updateScript("temp.ts", this.doc.getValue(), false);
-            var errors = this.serviceShim.languageService.getScriptErrors("temp.ts", 100);
-            var annotations = [];
-            var self = this;
-            this.sender.emit("compiled", this.compile(this.doc.getValue()));
-            errors.forEach(function (error) {
-                var pos = DocumentPositionUtil_1.DocumentPositionUtil.getPosition(self.doc, error.minChar);
-                annotations.push({
-                    row: pos.row,
-                    column: pos.column,
-                    text: error.message,
-                    minChar: error.minChar,
-                    limChar: error.limChar,
-                    type: "error",
-                    raw: error.message
-                });
-            });
-            this.sender.emit("compileErrors", annotations);
-        };
     }).call(TypeScriptWorker.prototype);
 });

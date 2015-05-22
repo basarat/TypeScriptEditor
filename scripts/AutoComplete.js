@@ -76,7 +76,7 @@ define(["require", "exports", 'ace/keyboard/hash_handler', "ace/lib/event_emitte
                     for (var n in infos) {
                         var info = infos[n];
                         var name = '<span class="label-name">' + info.name + '</span>';
-                        var type = '<span class="label-type">' + info.type + '</span>';
+                        var type = '<span class="label-type">' + info.kind + '</span>';
                         var kind = '<span class="label-kind label-kind-' + info.kind + '">' + info.kind.charAt(0) + '</span>';
                         html += '<li data-name="' + info.name + '">' + kind + name + type + '</li>';
                     }

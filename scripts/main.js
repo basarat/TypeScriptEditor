@@ -1,12 +1,25 @@
-define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete', 'EditorPosition', 'CompilationService', "ace/lib/lang", 'ace/mode/typescript/typescriptServicesOld', 'ace/mode/typescript/typescriptServicesOld', 'ace/mode/typescript/lightHarness', "./tsProject"], function (require, exports, utils_1, ace, range_1, AutoComplete_1, EditorPosition_1, CompilationService_1, lang_1, typescriptServicesOld_1, typescriptServicesOld_2, lightHarness_1, tsProject_1) {
+define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete', 'EditorPosition', 'CompilationService', "ace/lib/lang", "./lib/ace/mode/typescript/tsProject"], function (require, exports, utils_1, ace, range_1, AutoComplete_1, EditorPosition_1, CompilationService_1, lang_1, tsProject_1) {
+    function defaultFormatCodeOptions() {
+        return {
+            IndentSize: 4,
+            TabSize: 4,
+            NewLineCharacter: "\n",
+            ConvertTabsToSpaces: true,
+            InsertSpaceAfterCommaDelimiter: true,
+            InsertSpaceAfterSemicolonInForStatements: true,
+            InsertSpaceBeforeAndAfterBinaryOperators: true,
+            InsertSpaceAfterKeywordsInControlFlowStatements: true,
+            InsertSpaceAfterFunctionKeywordForAnonymousFunctions: false,
+            InsertSpaceAfterOpeningAndBeforeClosingNonemptyParenthesis: false,
+            PlaceOpenBraceOnNewLineForFunctions: false,
+            PlaceOpenBraceOnNewLineForControlBlocks: false,
+        };
+    }
+    exports.defaultFormatCodeOptions = defaultFormatCodeOptions;
     var aceEditorPosition = null;
     var editor = null;
     var outputEditor = null;
-    var typeCompilationService = null;
     var docUpdateCount = 0;
-    var typeScriptLS = new lightHarness_1.TypeScriptLS();
-    var ServicesFactory = new typescriptServicesOld_1.Services.TypeScriptServicesFactory();
-    var serviceShim = ServicesFactory.createLanguageServiceShim(typeScriptLS);
     var selectFileName = "";
     var syncStop = false;
     var autoComplete = null;
@@ -14,10 +27,9 @@ define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete
     var errorMarkers = [];
     var tsProject = tsProject_1.getTSProject();
     function loadLibFiles() {
-        var libFiles = ["typescripts/libOld.d.ts"];
+        var libFiles = ["typescripts/lib.d.ts"];
         libFiles.forEach(function (libname) {
             utils_1.readFile(libname, function (content) {
-                typeScriptLS.addScript(libname, content.replace(/\r\n?/g, "\n"), true);
                 tsProject.languageServiceHost.addScript(libname, content);
             });
         });
@@ -27,7 +39,7 @@ define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete
                     var params = {
                         data: {
                             name: libname,
-                            content: content.replace(/\r\n?/g, "\n")
+                            content: content
                         }
                     };
                     editor.getSession().$worker.emit("addLibrary", params);
@@ -42,7 +54,7 @@ define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete
             var data = content.replace(/\r\n?/g, "\n");
             editor.setValue(data);
             editor.moveCursorTo(0, 0);
-            typeScriptLS.updateScript(filename, editor.getSession().getDocument().getValue(), false);
+            tsProject.languageServiceHost.addScript(filename, editor.getSession().getDocument().getValue());
             syncStop = false;
         });
     }
@@ -102,18 +114,18 @@ define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete
         var end = aceEditorPosition.getPositionChars(data.end);
         var newText = editor.getSession().getTextRange(new range_1.Range(data.start.row, data.start.column, data.end.row, data.end.column));
         if (action == "insert") {
-            editLanguageService(script, new typescriptServicesOld_1.Services.TextEdit(start, start, newText));
+            editLanguageService(script, start, start, newText);
         }
         else if (action == "remove") {
-            editLanguageService(script, new typescriptServicesOld_1.Services.TextEdit(start, end, ""));
+            editLanguageService(script, start, end, "");
         }
         else {
             console.error('unknown action:', action);
         }
     }
     ;
-    function editLanguageService(name, textEdit) {
-        typeScriptLS.editScript(name, textEdit.minChar, textEdit.limChar, textEdit.text);
+    function editLanguageService(name, minChar, limChar, newText) {
+        tsProject.languageServiceHost.editScript(name, minChar, limChar, newText);
     }
     function onChangeCursor(e) {
         if (!syncStop) {
@@ -141,9 +153,7 @@ define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete
             }
             ;
         }
-        var option = new typescriptServicesOld_1.Services.EditorOptions();
-        option.NewLineCharacter = "\n";
-        var smartIndent = serviceShim.languageService.getSmartIndentAtLineNumber(selectFileName, lineNumber, option);
+        var smartIndent = tsProject.languageService.getIndentationAtPosition(selectFileName, lineNumber, defaultFormatCodeOptions());
         if (preIndent > smartIndent) {
             editor.indent();
         }
@@ -163,57 +173,33 @@ define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete
         }
     }
     function refactor() {
-        var references = serviceShim.languageService.getOccurrencesAtPosition(selectFileName, aceEditorPosition.getCurrentCharPosition());
+        var references = tsProject.languageService.getOccurrencesAtPosition(selectFileName, aceEditorPosition.getCurrentCharPosition());
         references.forEach(function (ref) {
             var getpos = aceEditorPosition.getAcePositionFromChars;
-            var start = getpos(ref.ast.minChar);
-            var end = getpos(ref.ast.limChar);
+            var start = getpos(ref.textSpan.start);
+            var end = getpos(ref.textSpan.start + ref.textSpan.length);
             var range = new range_1.Range(start.row, start.column, end.row, end.column);
             editor.selection.addRange(range);
         });
     }
     function showOccurrences() {
-        var references = serviceShim.languageService.getOccurrencesAtPosition(selectFileName, aceEditorPosition.getCurrentCharPosition());
         var session = editor.getSession();
         refMarkers.forEach(function (id) {
             session.removeMarker(id);
         });
+        var references = tsProject.languageService.getOccurrencesAtPosition(selectFileName, aceEditorPosition.getCurrentCharPosition());
+        if (!references) {
+            return;
+        }
         references.forEach(function (ref) {
             var getpos = aceEditorPosition.getAcePositionFromChars;
-            var start = getpos(ref.ast.minChar);
-            var end = getpos(ref.ast.limChar);
+            var start = getpos(ref.textSpan.start);
+            var end = getpos(ref.textSpan.start + ref.textSpan.length);
             var range = new range_1.Range(start.row, start.column, end.row, end.column);
             refMarkers.push(session.addMarker(range, "typescript-ref", "text", true));
         });
     }
     var deferredShowOccurrences = lang_1.deferredCall(showOccurrences);
-    function Compile(typeScriptContent) {
-        var output = "";
-        var outfile = {
-            Write: function (s) {
-                output += s;
-            },
-            WriteLine: function (s) {
-                output += s + "\n";
-            },
-            Close: function () {
-            }
-        };
-        var outerr = {
-            Write: function (s) {
-            },
-            WriteLine: function (s) {
-            },
-            Close: function () {
-            }
-        };
-        var compiler = new typescriptServicesOld_2.TypeScript.TypeScriptCompiler(outfile, outerr, new typescriptServicesOld_2.TypeScript.NullLogger(), new typescriptServicesOld_2.TypeScript.CompilationSettings());
-        compiler.addUnit(typeScriptContent, "output.js", false);
-        compiler.typeCheck();
-        compiler.emit(false, function (name) {
-        });
-        return output;
-    }
     function workerOnCreate(func, timeout) {
         if (editor.getSession().$worker) {
             func(editor.getSession().$worker);
@@ -260,8 +246,7 @@ define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete
                 multiSelectAction: "forEach"
             }]);
         aceEditorPosition = new EditorPosition_1.EditorPosition(editor);
-        typeCompilationService = new CompilationService_1.CompilationService(editor, serviceShim);
-        autoComplete = new AutoComplete_1.AutoComplete(editor, selectFileName, typeCompilationService);
+        autoComplete = new AutoComplete_1.AutoComplete(editor, selectFileName, new CompilationService_1.CompilationService(editor));
         var originalTextInput = editor.onTextInput;
         editor.onTextInput = function (text) {
             originalTextInput.call(editor, text);
@@ -270,9 +255,7 @@ define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete
             }
             else if (editor.getSession().getDocument().isNewLine(text)) {
                 var lineNumber = editor.getCursorPosition().row;
-                var option = new typescriptServicesOld_1.Services.EditorOptions();
-                option.NewLineCharacter = "\n";
-                var indent = serviceShim.languageService.getSmartIndentAtLineNumber(selectFileName, lineNumber, option);
+                var indent = tsProject.languageService.getIndentationAtPosition(selectFileName, lineNumber, defaultFormatCodeOptions());
                 if (indent > 0) {
                     editor.commands.exec("inserttext", editor, { text: " ", times: indent });
                 }

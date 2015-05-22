@@ -58,6 +58,8 @@ export interface LanguageServiceHost extends ts.LanguageServiceHost {
      * @param content the new file content.
      */
     updateScript(fileName: string, content: string): void;
+    
+    hasScript(fileName): boolean;
 
     /**
      * Edit a script.
@@ -144,6 +146,10 @@ export function createLanguageServiceHost(currentDir: string, defaultLibFileName
      */
     function removeAll(): void {
         fileNameToScript = Object.create(null);
+    }
+    
+    function hasScript(fileName){
+        return !!fileNameToScript[fileName];
     }
 
     /**
@@ -257,16 +263,17 @@ export function createLanguageServiceHost(currentDir: string, defaultLibFileName
     }
 
     return {
-        //ts.Logger implementation, actually master implementation instead of 1.4.1
-        log: console.info,
-        error: console.error,
-        trace: console.info,
+        //ts.Logger implementation
+        log: ()=>null,
+        error: ()=>null,
+        trace: ()=>null,
 
         // LanguageServiceHost implementation
         addScript,
         removeScript,
         removeAll,
         updateScript,
+        hasScript,
         editScript,
         getScriptContent,
         setCompilationSettings,

@@ -28,6 +28,9 @@ define(["require", "exports"], function (require, exports) {
         function removeAll() {
             fileNameToScript = Object.create(null);
         }
+        function hasScript(fileName) {
+            return !!fileNameToScript[fileName];
+        }
         function updateScript(fileName, content) {
             var script = fileNameToScript[fileName];
             if (script) {
@@ -84,13 +87,14 @@ define(["require", "exports"], function (require, exports) {
             return null;
         }
         return {
-            log: console.info,
-            error: console.error,
-            trace: console.info,
+            log: function () { return null; },
+            error: function () { return null; },
+            trace: function () { return null; },
             addScript: addScript,
             removeScript: removeScript,
             removeAll: removeAll,
             updateScript: updateScript,
+            hasScript: hasScript,
             editScript: editScript,
             getScriptContent: getScriptContent,
             setCompilationSettings: setCompilationSettings,
