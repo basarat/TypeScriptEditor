@@ -30,7 +30,7 @@ var errorMarkers =[];
 
 function loadTypeScriptLibrary(){
     var libnames = [
-        "typescripts/lib.d.ts"
+        "typescripts/libOld.d.ts"
     ];
 
     // Add a non network script to get the balls rolling more quickly

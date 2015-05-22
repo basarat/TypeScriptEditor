@@ -14,7 +14,7 @@ define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete
     var errorMarkers = [];
     function loadTypeScriptLibrary() {
         var libnames = [
-            "typescripts/lib.d.ts"
+            "typescripts/libOld.d.ts"
         ];
         var iArgs = "interface IArguments {           [index: number]: any;        length: number;        callee: Function;    }";
         typeScriptLS.addScript('start.d.ts', iArgs, true);

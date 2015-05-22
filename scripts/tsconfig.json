@@ -20,6 +20,8 @@
         "./CompilationService.ts",
         "./EditorPosition.ts",
         "./globals.d.ts",
+        "./lib/ace/mode/typescript/languageServiceHost.ts",
+        "./lib/ace/mode/typescript/typescriptService.d.ts",
         "./main.ts",
         "./typings/ace/ace.d.ts",
         "./typings/tsd.d.ts",
