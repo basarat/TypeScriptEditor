@@ -44,42 +44,34 @@ define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete
     function onUpdateDocument(e) {
         if (selectFileName) {
             if (!syncStop) {
-                try {
-                    syncTypeScriptServiceContent(selectFileName, e);
-                    updateMarker(e);
-                }
-                catch (ex) {
-                }
+                syncTypeScriptServiceContent(selectFileName, e);
+                updateMarker(e);
             }
         }
     }
-    function updateMarker(aceChangeEvent) {
-        var data = aceChangeEvent.data;
+    function updateMarker(data) {
         var action = data.action;
-        var range = data.range;
+        var action = data.action;
+        var start = aceEditorPosition.getPositionChars(data.start);
+        var end = aceEditorPosition.getPositionChars(data.end);
+        var newText = editor.getSession().getTextRange(new range_1.Range(data.start.row, data.start.column, data.end.row, data.end.column));
         var markers = editor.getSession().getMarkers(true);
         var line_count = 0;
         var isNewLine = editor.getSession().getDocument().isNewLine;
-        if (action == "insertText") {
-            if (isNewLine(data.text)) {
+        if (action == "insert") {
+            if (isNewLine(newText)) {
                 line_count = 1;
             }
         }
-        else if (action == "insertLines") {
-            line_count = data.lines.length;
-        }
-        else if (action == "removeText") {
-            if (isNewLine(data.text)) {
+        else if (action == "remove") {
+            if (isNewLine(newText)) {
                 line_count = -1;
             }
-        }
-        else if (action == "removeLines") {
-            line_count = -data.lines.length;
         }
         if (line_count != 0) {
             var markerUpdate = function (id) {
                 var marker = markers[id];
-                var row = range.start.row;
+                var row = data.start.row;
                 if (line_count > 0) {
                     row = +1;
                 }
@@ -93,28 +85,19 @@ define(["require", "exports", "./utils", 'ace/ace', 'ace/range', './AutoComplete
             editor.onChangeFrontMarker();
         }
     }
-    function syncTypeScriptServiceContent(script, aceChangeEvent) {
-        var data = aceChangeEvent.data;
+    function syncTypeScriptServiceContent(script, data) {
         var action = data.action;
-        var range = data.range;
-        var start = aceEditorPosition.getPositionChars(range.start);
-        if (action == "insertText") {
-            editLanguageService(script, new typescriptServices_1.Services.TextEdit(start, start, data.text));
+        var start = aceEditorPosition.getPositionChars(data.start);
+        var end = aceEditorPosition.getPositionChars(data.end);
+        var newText = editor.getSession().getTextRange(new range_1.Range(data.start.row, data.start.column, data.end.row, data.end.column));
+        if (action == "insert") {
+            editLanguageService(script, new typescriptServices_1.Services.TextEdit(start, start, newText));
         }
-        else if (action == "insertLines") {
-            var text = data.lines.map(function (line) {
-                return line + '\n';
-            }).join('');
-            editLanguageService(script, new typescriptServices_1.Services.TextEdit(start, start, text));
-        }
-        else if (action == "removeText") {
-            var end = start + data.text.length;
+        else if (action == "remove") {
             editLanguageService(script, new typescriptServices_1.Services.TextEdit(start, end, ""));
         }
-        else if (action == "removeLines") {
-            var len = aceEditorPosition.getLinesChars(data.lines);
-            var end = start + len;
-            editLanguageService(script, new typescriptServices_1.Services.TextEdit(start, end, ""));
+        else {
+            console.error('unknown action:', action);
         }
     }
     ;

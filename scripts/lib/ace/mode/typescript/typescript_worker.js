@@ -31,7 +31,7 @@
 define(function(require, exports, module) {
     "no use strict";
 
-    var oop = require("ace/lib/oop");
+    var oop = require("../../lib/oop");
     var Mirror = require("../../worker/mirror").Mirror;
     var lang = require("../../lib/lang");
     var Document = require("../../document").Document;
@@ -53,14 +53,28 @@ define(function(require, exports, module) {
         this.languageService = this.serviceShim.languageService;
 
 
-        var self = this;
+        var _self = this;
         sender.on("change", function(e) {
-            doc.applyDeltas(e.data);
-            deferredUpdate.schedule(self.$timeout);
+            var data = e.data;
+            if (data[0].start) {
+                doc.applyDeltas(data);
+            } else {
+                for (var i = 0; i < data.length; i += 2) {
+                    if (Array.isArray(data[i+1])) {
+                        var d = {action: "insert", start: data[i], lines: data[i+1]};
+                    } else {
+                        var d = {action: "remove", start: data[i], end: data[i+1]};
+                    }
+                    doc.applyDelta(d, true);
+                }
+            }
+            if (_self.$timeout)
+                return deferredUpdate.schedule(_self.$timeout);
+            _self.onUpdate();
         });
 
         sender.on("addLibrary", function(e) {
-            self.addlibrary(e.data.name , e.data.content);
+            _self.addlibrary(e.data.name , e.data.content);
         });
 
         this.setOptions();

@@ -15,7 +15,7 @@ declare module AceAjax{
 
 declare module "ace/range" {
     var ace: {
-        Range: any;
+        Range: typeof AceAjax.Range;
     };
     export = ace;
 }
